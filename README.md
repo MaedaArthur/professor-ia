@@ -196,6 +196,11 @@ OpenCode use `/connect` e cole a chave do OpenRouter na mão.
 **Erro 429 no `professor.py`**
 Limite do Gemini. Espere um minuto e tente de novo.
 
+**Erro 503 "high demand" no `professor.py`**
+O modelo do Google está sobrecarregado — não é problema seu nem da sua chave.
+O programa repete a chamada sozinho até 3 vezes. Se insistir, troque de modelo:
+`GEMINI_MODEL=gemini-flash-lite-latest python professor.py`
+
 **O professor me deu a resposta do exercício**
 Acontece com modelo pequeno. Reforce a regra 1 no system prompt do `professor.py`
 (ou em `.opencode/agents/professor.md`, na aula 2) e repita o teste.
