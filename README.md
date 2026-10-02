@@ -52,11 +52,11 @@ OpenCode. Quando terminar, confira:
 
 ```bash
 opencode --version
-echo "gemini: ${GEMINI_API_KEY:+ok}"
-echo "openrouter: ${OPENROUTER_API_KEY:+ok}"
+env | grep -c GEMINI_API_KEY
+env | grep -c OPENROUTER_API_KEY
 ```
 
-Os dois últimos comandos devem imprimir `ok`. Se imprimirem vazio, a chave não
+Os dois últimos comandos devem imprimir `1`. Se imprimirem `0`, a chave não
 chegou — veja "Problemas" no fim deste arquivo.
 
 ---
@@ -183,7 +183,7 @@ O binário fica em `~/.opencode/bin`. Rode `export PATH="$HOME/.opencode/bin:$PA
 Se persistir, o `postCreateCommand` falhou: veja o log em **Codespaces: View Creation
 Log** na paleta de comandos (`Ctrl+Shift+P`).
 
-**`echo "gemini: ${GEMINI_API_KEY:+ok}"` imprime vazio**
+**`env | grep -c GEMINI_API_KEY` imprime `0`**
 O secret não chegou. Confira em https://github.com/settings/codespaces que o
 secret existe **e** que este repositório está na lista de acesso dele. Depois
 **recrie o Codespace** — secret novo não entra em Codespace já criado.
