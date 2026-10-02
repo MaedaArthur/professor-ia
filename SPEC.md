@@ -67,8 +67,13 @@ inteira foi reenviada**. Algo como:
 |---|---|
 | `GEMINI_API_KEY` ausente ou vazia | mensagem clara dizendo **como configurar** (secret do Codespace ou `export`), e sair com código != 0 |
 | HTTP 429 (limite atingido) | avisar "limite atingido, espere um minuto", **remover a pergunta do histórico** (para não reenviar uma pergunta sem resposta) e voltar ao prompt sem quebrar |
+| HTTP 500/502/**503**/504 | **repetir a chamada** até 3 vezes, esperando 2s e depois 4s. Se ainda falhar, avisar e voltar ao prompt |
 | outro erro HTTP | mostrar status e corpo da resposta, voltar ao prompt |
-| erro de rede / timeout | avisar e voltar ao prompt |
+| erro de rede / timeout | repetir como no 5xx; se insistir, avisar e voltar ao prompt |
+
+> O 503 não é hipotético: o Gemini responde `"This model is currently
+> experiencing high demand"` com frequência em horário de pico. Sem repetir,
+> boa parte das perguntas da aula falha. Use `time.sleep` — é o suficiente.
 
 ## 2. Chamada da API
 
