@@ -3,12 +3,16 @@
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
 
   // Instala as dependências Python e o OpenCode (agente de terminal das aulas 2 e 3).
-  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && curl -fsSL https://opencode.ai/install | bash",
+  // Separado por ';' e não por '&&' de propósito: se o pip falhar, o OpenCode
+  // ainda é instalado. Com '&&' um erro de pip deixava o aluno sem o opencode.
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt; curl -fsSL https://opencode.ai/install | bash; echo '--- postCreate terminou ---'; ls -l $HOME/.opencode/bin || echo 'ATENCAO: o OpenCode nao foi instalado'",
 
-  // O instalador do OpenCode põe o binário em ~/.opencode/bin e só mexe no .bashrc.
-  // Sem esta linha o comando `opencode` não aparece em shell não-interativo.
+  // O instalador do OpenCode põe o binário em ~/.opencode/bin e só mexe no .bashrc,
+  // que não vale em shell não-interativo. Os dois caminhos estão aqui porque
+  // ${containerEnv:HOME} não resolveu de forma confiável no Codespaces; o
+  // literal /home/vscode é o usuário da imagem devcontainers/python.
   "remoteEnv": {
-    "PATH": "${containerEnv:PATH}:${containerEnv:HOME}/.opencode/bin"
+    "PATH": "${containerEnv:PATH}:/home/vscode/.opencode/bin:${containerEnv:HOME}/.opencode/bin"
   },
 
   // Secrets recomendados: ao criar o Codespace o GitHub pede estas duas chaves
