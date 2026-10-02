@@ -21,6 +21,7 @@ import json
 import os
 import re
 import sys
+import time
 import unicodedata
 
 import requests
@@ -55,6 +56,11 @@ Gere uma chave grátis em https://aistudio.google.com/apikey"""
 
 class LimiteAtingido(Exception):
     """Levantada quando a API responde 429 (requisições demais)."""
+
+
+# Veja a nota em professor.py: o Gemini devolve 503 em horário de pico.
+HTTP_TRANSITORIO = (500, 502, 503, 504)
+TENTATIVAS = 3
 
 
 class ErroDaApi(Exception):
@@ -283,24 +289,36 @@ def chamar_llm(messages):
     """
     chave = os.environ.get("GEMINI_API_KEY", "").strip()
 
-    try:
-        resposta = requests.post(
-            URL,
-            headers={
-                "Authorization": f"Bearer {chave}",
-                "Content-Type": "application/json",
-            },
-            json={"model": MODELO, "messages": messages, "tools": FERRAMENTAS},
-            timeout=60,
-        )
-    except requests.exceptions.RequestException as erro:
-        raise ErroDaApi(f"falha de rede: {erro}") from erro
+    for tentativa in range(1, TENTATIVAS + 1):
+        try:
+            resposta = requests.post(
+                URL,
+                headers={
+                    "Authorization": f"Bearer {chave}",
+                    "Content-Type": "application/json",
+                },
+                json={"model": MODELO, "messages": messages, "tools": FERRAMENTAS},
+                timeout=60,
+            )
+        except requests.exceptions.RequestException as erro:
+            if tentativa < TENTATIVAS:
+                print(f"           (rede falhou, tentando de novo em {tentativa * 2}s)")
+                time.sleep(tentativa * 2)
+                continue
+            raise ErroDaApi(f"falha de rede: {erro}") from erro
 
-    if resposta.status_code == 429:
-        raise LimiteAtingido()
+        if resposta.status_code == 429:
+            raise LimiteAtingido()
 
-    if resposta.status_code != 200:
-        raise ErroDaApi(f"HTTP {resposta.status_code}: {resposta.text[:400]}")
+        if resposta.status_code in HTTP_TRANSITORIO and tentativa < TENTATIVAS:
+            print(f"           (modelo sobrecarregado, tentando de novo em {tentativa * 2}s)")
+            time.sleep(tentativa * 2)
+            continue
+
+        if resposta.status_code != 200:
+            raise ErroDaApi(f"HTTP {resposta.status_code}: {resposta.text[:400]}")
+
+        break
 
     dados = resposta.json()
 
