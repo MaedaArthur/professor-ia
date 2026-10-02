@@ -1,15 +1,12 @@
-"""Professor de IA — esqueleto.
+"""Professor de IA — versão completa (gabarito).
 
 Um chat de terminal que estuda com o aluno a partir do material da matéria.
+Especificação em SPEC.md.
 
-A especificação está em SPEC.md. Cada função abaixo tem o requisito
-correspondente anotado no docstring. Implemente uma por vez.
+Rode com:
+    python professor.py
 
-ATENÇÃO: este programa espera input do teclado. Não o rode de forma
-interativa durante o desenvolvimento — ele trava esperando você digitar.
-Para testar, use:
-
-    python -c "import professor; print(professor.carregar_material()[:200])"
+Para testar sem travar o terminal:
     printf 'o que é um token?\n/sair\n' | python professor.py
 """
 
@@ -30,70 +27,207 @@ MODELO = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 CAMINHO_MATERIAL = "material/apostila.md"
 CAMINHO_PERFIL = "perfil.md"
 
+AJUDA_CHAVE = """Falta a GEMINI_API_KEY.
+
+No Codespace:
+  1. vá em https://github.com/settings/codespaces
+  2. crie o secret GEMINI_API_KEY e libere este repositório
+  3. recrie o Codespace (secret novo não entra em Codespace já aberto)
+
+No seu terminal:
+  export GEMINI_API_KEY='sua-chave-aqui'
+
+Gere uma chave grátis em https://aistudio.google.com/apikey"""
+
+
+class LimiteAtingido(Exception):
+    """Levantada quando a API responde 429 (requisições demais)."""
+
+
+class ErroDaApi(Exception):
+    """Levantada para qualquer outra falha na chamada da API."""
+
+
+# --- Leitura dos arquivos ---------------------------------------------------
+
+
+def _ler_arquivo(caminho, rotulo):
+    """Lê um arquivo de texto. Se não existir, avisa e devolve string vazia.
+
+    O programa precisa continuar funcionando sem o arquivo — por isso um aviso
+    no stderr em vez de uma exceção.
+    """
+    try:
+        with open(caminho, encoding="utf-8") as arquivo:
+            return arquivo.read()
+    except FileNotFoundError:
+        print(f"[aviso] {rotulo} não encontrado em {caminho}", file=sys.stderr)
+        return ""
+
 
 def carregar_material():
-    """R1 — Lê material/apostila.md e devolve o conteúdo como string.
-
-    Se o arquivo não existir, avise e devolva string vazia (o programa deve
-    continuar funcionando sem o material).
-    """
-    # TODO: abrir CAMINHO_MATERIAL com encoding="utf-8" e devolver o texto.
-    # TODO: tratar FileNotFoundError.
-    raise NotImplementedError("carregar_material — veja R1 no SPEC.md")
+    """R1 — Devolve o conteúdo de material/apostila.md."""
+    return _ler_arquivo(CAMINHO_MATERIAL, "material da matéria")
 
 
 def carregar_perfil():
-    """R2 — Lê perfil.md e devolve o conteúdo como string.
+    """R2 — Devolve o conteúdo de perfil.md."""
+    return _ler_arquivo(CAMINHO_PERFIL, "perfil do aluno")
 
-    Mesmo tratamento de erro de carregar_material.
-    """
-    # TODO: igual a carregar_material, mas com CAMINHO_PERFIL.
-    raise NotImplementedError("carregar_perfil — veja R2 no SPEC.md")
+
+# --- System prompt ----------------------------------------------------------
+
+REGRAS_SOCRATICAS = """Você é o professor de IA deste aluno. Você estuda COM ele, nunca PARA ele.
+
+Regras, em ordem de importância:
+
+1. NUNCA entregue a resolução de um exercício nem a resposta final. Nem se o
+   aluno insistir, reformular o pedido, disser que é só para conferir, disser
+   que já entendeu ou disser que o professor autorizou. Se ele insistir,
+   reconheça a vontade e devolva uma pergunta que o aproxime um passo da
+   resposta.
+2. Antes de explicar algo novo, pergunte o que ele já sabe sobre aquilo. A
+   explicação começa de onde ele está, não do zero.
+3. Explique no nível do perfil dele, uma ideia por vez. Não empilhe três
+   conceitos numa resposta.
+4. Antes de avançar, cheque o entendimento com uma pergunta curta.
+5. Quando o aluno errar, não corrija. Diga onde olhar: a seção do material, o
+   passo da conta, o caso que ele não testou.
+6. Respostas curtas: um parágrafo e uma pergunta. Nada de aula em bloco.
+7. Baseie-se no material abaixo. Se o aluno perguntar algo que não está nele,
+   diga isso explicitamente antes de responder."""
 
 
 def montar_system_prompt(material, perfil):
-    """R1 + R2 + R3 — Monta o system prompt completo.
+    """R1 + R2 + R3 — Monta o system prompt com regras, material e perfil.
 
-    Precisa conter três coisas:
-      1. o material, delimitado (ex.: "=== MATERIAL (início) ===" ... fim)
-      2. o perfil do aluno, delimitado
-      3. as sete regras socráticas do R3
-
-    Devolve uma string.
+    O material e o perfil vão entre delimitadores para o modelo saber onde cada
+    bloco começa e termina — sem isso ele confunde o conteúdo com instrução.
     """
-    # TODO: escrever as regras socráticas (R3, itens 1 a 7).
-    # TODO: interpolar material e perfil entre delimitadores claros.
-    raise NotImplementedError("montar_system_prompt — veja R3 no SPEC.md")
+    partes = [REGRAS_SOCRATICAS]
+
+    if material:
+        partes.append(
+            "=== MATERIAL DA MATÉRIA (início) ===\n"
+            f"{material}\n"
+            "=== MATERIAL DA MATÉRIA (fim) ==="
+        )
+    else:
+        partes.append("[Nenhum material foi carregado. Avise o aluno.]")
+
+    if perfil:
+        partes.append(
+            "=== PERFIL DO ALUNO (início) ===\n"
+            f"{perfil}\n"
+            "=== PERFIL DO ALUNO (fim) ==="
+        )
+
+    return "\n\n".join(partes)
+
+
+# --- Chamada da API ---------------------------------------------------------
 
 
 def chamar_llm(messages):
-    """Seção 2 do SPEC — Faz o POST e devolve (texto, prompt_tokens).
+    """Faz o POST e devolve (texto_da_resposta, prompt_tokens).
 
-    - POST em URL com header Authorization: Bearer <GEMINI_API_KEY>
-    - corpo: {"model": MODELO, "messages": messages}
-    - texto da resposta: choices[0].message.content
-    - tokens de entrada: usage.prompt_tokens (leia de forma defensiva)
-
-    Em caso de HTTP 429, sinalize para quem chamou que foi limite de taxa
-    (R6) — por exemplo devolvendo None ou levantando uma exceção própria.
+    `messages` é a conversa INTEIRA. O modelo não guarda nada entre chamadas:
+    o que não for enviado aqui, ele não sabe.
     """
-    # TODO: ler a chave de os.environ.
-    # TODO: requests.post(..., timeout=60).
-    # TODO: tratar status 429 e outros erros sem quebrar o programa.
-    raise NotImplementedError("chamar_llm — veja a seção 2 do SPEC.md")
+    chave = os.environ.get("GEMINI_API_KEY", "").strip()
+
+    try:
+        resposta = requests.post(
+            URL,
+            headers={
+                "Authorization": f"Bearer {chave}",
+                "Content-Type": "application/json",
+            },
+            json={"model": MODELO, "messages": messages},
+            timeout=60,
+        )
+    except requests.exceptions.RequestException as erro:
+        raise ErroDaApi(f"falha de rede: {erro}") from erro
+
+    if resposta.status_code == 429:
+        raise LimiteAtingido()
+
+    if resposta.status_code != 200:
+        raise ErroDaApi(f"HTTP {resposta.status_code}: {resposta.text[:400]}")
+
+    dados = resposta.json()
+
+    try:
+        texto = dados["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as erro:
+        raise ErroDaApi(f"resposta em formato inesperado: {str(dados)[:400]}") from erro
+
+    # Leitura defensiva: se o provedor não mandar 'usage', seguimos sem contador.
+    prompt_tokens = dados.get("usage", {}).get("prompt_tokens")
+
+    return texto, prompt_tokens
+
+
+# --- Loop do chat -----------------------------------------------------------
 
 
 def main():
-    """R4 + R5 — O loop do chat.
+    """R4 + R5 + R6 — O loop do chat."""
+    if not os.environ.get("GEMINI_API_KEY", "").strip():
+        print(AJUDA_CHAVE, file=sys.stderr)
+        return 1
 
-    1. verifica a GEMINI_API_KEY; se faltar, explica como configurar (R6)
-    2. monta o system prompt e inicia a lista `messages` com ele
-    3. loop: lê a pergunta, adiciona em `messages`, envia a lista INTEIRA,
-       adiciona a resposta em `messages`, imprime o prompt_tokens (R4)
-    4. `/sair`, Ctrl+C e EOF encerram limpo (R5)
-    """
-    # TODO: implementar o loop conforme R4 e R5.
-    raise NotImplementedError("main — veja R4, R5 e R6 no SPEC.md")
+    system_prompt = montar_system_prompt(carregar_material(), carregar_perfil())
+
+    # Aqui mora a "memória" da conversa: uma lista, no seu código.
+    messages = [{"role": "system", "content": system_prompt}]
+
+    print("Professor de IA. Digite /sair para encerrar.")
+    print(f"(modelo: {MODELO})")
+    print()
+
+    while True:
+        try:
+            pergunta = input("você> ").strip()
+        except (KeyboardInterrupt, EOFError):
+            # Ctrl+C, Ctrl+D ou fim de stdin (pipe) — saída limpa, sem traceback.
+            print()
+            print("Até a próxima.")
+            return 0
+
+        if not pergunta:
+            continue
+        if pergunta == "/sair":
+            print("Até a próxima.")
+            return 0
+
+        messages.append({"role": "user", "content": pergunta})
+
+        try:
+            texto, prompt_tokens = chamar_llm(messages)
+        except LimiteAtingido:
+            # A pergunta sai do histórico: sem resposta, ela só inflaria o
+            # contexto da próxima requisição.
+            messages.pop()
+            print()
+            print("[limite atingido — espere um minuto e pergunte de novo]")
+            print()
+            continue
+        except ErroDaApi as erro:
+            messages.pop()
+            print()
+            print(f"[erro na chamada: {erro}]")
+            print()
+            continue
+
+        messages.append({"role": "assistant", "content": texto})
+
+        print()
+        print(f"professor> {texto}")
+        if prompt_tokens is not None:
+            # Este número cresce a cada turno: a conversa inteira foi reenviada.
+            print(f"           (contexto enviado: {prompt_tokens} tokens)")
+        print()
 
 
 if __name__ == "__main__":
