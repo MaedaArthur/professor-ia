@@ -1,0 +1,17 @@
+# Chaves e segredos
+.env
+.env.*
+!.env.example
+
+# Gerado pelos exercicios extras
+flashcards.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor / SO
+.DS_Store
+.vscode/

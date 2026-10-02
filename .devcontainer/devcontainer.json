@@ -1,0 +1,32 @@
+{
+  "name": "Workshop IA - Professor de IA",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+
+  // Instala as dependências Python e o OpenCode (agente de terminal das aulas 2 e 3).
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && curl -fsSL https://opencode.ai/install | bash",
+
+  // O instalador do OpenCode põe o binário em ~/.opencode/bin e só mexe no .bashrc.
+  // Sem esta linha o comando `opencode` não aparece em shell não-interativo.
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:${containerEnv:HOME}/.opencode/bin"
+  },
+
+  // Secrets recomendados: ao criar o Codespace o GitHub pede estas duas chaves
+  // e as injeta como variáveis de ambiente.
+  "secrets": {
+    "GEMINI_API_KEY": {
+      "description": "Chave da API do Gemini (Google AI Studio). Usada por 01_chamada_minima.py e professor.py. É grátis e não pede cartão.",
+      "documentationUrl": "https://aistudio.google.com/apikey"
+    },
+    "OPENROUTER_API_KEY": {
+      "description": "Chave da API do OpenRouter. Usada pelo OpenCode nas aulas 2 e 3, com modelos :free. É grátis e não pede cartão.",
+      "documentationUrl": "https://openrouter.ai/keys"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}
