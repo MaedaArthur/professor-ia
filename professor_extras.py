@@ -92,6 +92,26 @@ def _palavras(texto):
     return {p for p in re.findall(r"[a-z0-9]+", _normalizar(texto)) if len(p) >= 3}
 
 
+def _quantas_casam(palavras_consulta, vocabulario):
+    """Conta quantas palavras da consulta aparecem no vocabulário.
+
+    Tolera plural e gênero comparando por prefixo: "exercicio" casa com
+    "exercicios", "ferramenta" com "ferramentas". Sem isso a busca falha
+    justamente no jeito que o aluno digita.
+    """
+    total = 0
+    for palavra in palavras_consulta:
+        if palavra in vocabulario:
+            total += 1
+        elif len(palavra) >= 4 and any(
+            v.startswith(palavra) or palavra.startswith(v)
+            for v in vocabulario
+            if len(v) >= 4
+        ):
+            total += 1
+    return total
+
+
 def dividir_em_secoes(markdown):
     """Divide o markdown nas linhas que começam com '## '.
 
@@ -134,8 +154,8 @@ def buscar_material(consulta):
 
     pontuados = []
     for titulo, texto in dividir_em_secoes(markdown):
-        no_corpo = len(palavras_consulta & _palavras(texto))
-        no_titulo = len(palavras_consulta & _palavras(titulo))
+        no_corpo = _quantas_casam(palavras_consulta, _palavras(texto))
+        no_titulo = _quantas_casam(palavras_consulta, _palavras(titulo))
         pontos = no_corpo + 2 * no_titulo
         if pontos > 0:
             pontuados.append((pontos, titulo, texto))
