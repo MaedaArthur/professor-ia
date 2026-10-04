@@ -62,6 +62,12 @@ class LimiteAtingido(Exception):
 HTTP_TRANSITORIO = (500, 502, 503, 504)
 TENTATIVAS = 3
 
+# O free tier do Gemini tem limite POR MINUTO baixo: tres perguntas seguidas
+# ja levam 429. Como a janela e curta, esperar e tentar de novo quase sempre
+# resolve - e e melhor que o aluno perder o turno. As esperas sao visiveis de
+# proposito: ver o programa esperando pelo limite tambem e parte da aula.
+ESPERAS_429 = (20, 40)
+
 
 class ErroDaApi(Exception):
     """Levantada para qualquer outra falha na chamada da API."""
@@ -308,6 +314,11 @@ def chamar_llm(messages):
             raise ErroDaApi(f"falha de rede: {erro}") from erro
 
         if resposta.status_code == 429:
+            if tentativa <= len(ESPERAS_429):
+                espera = ESPERAS_429[tentativa - 1]
+                print(f"           (limite por minuto atingido — esperando {espera}s)")
+                time.sleep(espera)
+                continue
             raise LimiteAtingido()
 
         if resposta.status_code in HTTP_TRANSITORIO and tentativa < TENTATIVAS:
