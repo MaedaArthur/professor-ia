@@ -1,100 +1,202 @@
-"""Professor de IA — esqueleto.
+"""professor.py — um chat de terminal que estuda junto, no estilo Socrático.
 
-Um chat de terminal que estuda com o aluno a partir do material da matéria.
-
-A especificação está em SPEC.md. Cada função abaixo tem o requisito
-correspondente anotado no docstring. Implemente uma por vez.
-
-ATENÇÃO: este programa espera input do teclado. Não o rode de forma
-interativa durante o desenvolvimento — ele trava esperando você digitar.
-Para testar, use:
-
-    python -c "import professor; print(professor.carregar_material()[:200])"
-    printf 'o que é um token?\n/sair\n' | python professor.py
+Lê o material da matéria e o perfil do aluno, monta um system prompt com
+regras de ensino, e conversa com o aluno pedindo um modelo de linguagem
+através de uma chamada HTTP cru (requests).
 """
 
 import os
 import sys
+import time
 
 import requests
 
-# --- Configuração -----------------------------------------------------------
-# A URL é configurável para o mesmo código funcionar com outro provedor
-# (OpenRouter, por exemplo) trocando só esta variável e a chave.
+# Configuração via variáveis de ambiente — a chave nunca aparece no código.
 URL = os.environ.get(
     "LLM_URL",
     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
 )
 MODELO = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
 
-CAMINHO_MATERIAL = "material/apostila.md"
-CAMINHO_PERFIL = "perfil.md"
-
 
 def carregar_material():
-    """R1 — Lê material/apostila.md e devolve o conteúdo como string.
-
-    Se o arquivo não existir, avise e devolva string vazia (o programa deve
-    continuar funcionando sem o material).
-    """
-    # TODO: abrir CAMINHO_MATERIAL com encoding="utf-8" e devolver o texto.
-    # TODO: tratar FileNotFoundError.
-    raise NotImplementedError("carregar_material — veja R1 no SPEC.md")
+    """Lê a apostila e a devolve envolta em tags delimitadoras."""
+    caminho = "material/apostila.md"
+    if not os.path.exists(caminho):
+        # Avisa, mas não trava: o professor segue sem o material.
+        print(f"Aviso: '{caminho}' não encontrado. Prosseguindo sem o material.",
+              file=sys.stderr)
+        return ""
+    with open(caminho, encoding="utf-8") as f:
+        conteudo = f.read()
+    # As tags ajudam o modelo a saber onde o material começa e termina.
+    return "=== MATERIAL DA MATÉRIA (início) ===\n" + conteudo + "\n=== MATERIAL DA MATÉRIA (fim) ==="
 
 
 def carregar_perfil():
-    """R2 — Lê perfil.md e devolve o conteúdo como string.
-
-    Mesmo tratamento de erro de carregar_material.
-    """
-    # TODO: igual a carregar_material, mas com CAMINHO_PERFIL.
-    raise NotImplementedError("carregar_perfil — veja R2 no SPEC.md")
+    """Lê o perfil do aluno e o devolve envolta em tags delimitadoras."""
+    caminho = "perfil.md"
+    if not os.path.exists(caminho):
+        print(f"Aviso: '{caminho}' não encontrado. Prosseguindo sem perfil.",
+              file=sys.stderr)
+        return ""
+    with open(caminho, encoding="utf-8") as f:
+        conteudo = f.read()
+    return "=== PERFIL DO ALUNO (início) ===\n" + conteudo + "\n=== PERFIL DO ALUNO (fim) ==="
 
 
 def montar_system_prompt(material, perfil):
-    """R1 + R2 + R3 — Monta o system prompt completo.
+    """Junta material, perfil e as regras socráticas no system prompt."""
+    prompt = f"""Você é um professor de IA que conversa pelo terminal. Siga estritamente estas regras:
 
-    Precisa conter três coisas:
-      1. o material, delimitado (ex.: "=== MATERIAL (início) ===" ... fim)
-      2. o perfil do aluno, delimitado
-      3. as sete regras socráticas do R3
+1. NUNCA entregue a resolução de um exercício nem a resposta final — nem se o aluno insistir. Reformule o pedido e devolvia uma pergunta que puxe o raciocínio.
+2. Antes de explicar algo novo, pergunte o que o aluno já sabe sobre aquilo.
+3. Explique no nível do perfil do aluno, uma ideia por vez.
+4. Cheque o entendimento com uma pergunta curta antes de avançar.
+5. Quando o aluno errar, aponte onde olhar (seção do material, passo da conta) em vez de corrigir.
+6. Respostas curtas: um parágrafo e uma pergunta.
+7. Baseie-se no material. Se algo não estiver no material, avise explicitamente.
 
-    Devolve uma string.
-    """
-    # TODO: escrever as regras socráticas (R3, itens 1 a 7).
-    # TODO: interpolar material e perfil entre delimitadores claros.
-    raise NotImplementedError("montar_system_prompt — veja R3 no SPEC.md")
+{material}
+
+{perfil}
+"""
+    return prompt
+
+
+def verificar_chave():
+    """Valida a API key. Retorna True se ok, False se falta."""
+    chave = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not chave:
+        print("Falta a GEMINI_API_KEY.", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("No Codespace: adicione o secret GEMINI_API_KEY e recrie o Codespace.", file=sys.stderr)
+        print("No seu terminal: export GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
+        print("Gere uma chave grátis em https://aistudio.google.com/apikey", file=sys.stderr)
+        return False
+    return True
 
 
 def chamar_llm(messages):
-    """Seção 2 do SPEC — Faz o POST e devolve (texto, prompt_tokens).
-
-    - POST em URL com header Authorization: Bearer <GEMINI_API_KEY>
-    - corpo: {"model": MODELO, "messages": messages}
-    - texto da resposta: choices[0].message.content
-    - tokens de entrada: usage.prompt_tokens (leia de forma defensiva)
-
-    Em caso de HTTP 429, sinalize para quem chamou que foi limite de taxa
-    (R6) — por exemplo devolvendo None ou levantando uma exceção própria.
     """
-    # TODO: ler a chave de os.environ.
-    # TODO: requests.post(..., timeout=60).
-    # TODO: tratar status 429 e outros erros sem quebrar o programa.
-    raise NotImplementedError("chamar_llm — veja a seção 2 do SPEC.md")
+    Envia a lista inteira de mensagens para a API e devolve (texto, prompt_tokens).
+    Retorna None em caso de 429 (após remover a pergunta do histórico).
+    Levanta exceção apenas em erros não tratados.
+    """
+    corpo = {
+        "model": MODELO,
+        "messages": messages,
+    }
+
+    chave = os.environ["GEMINI_API_KEY"]
+
+    # Estratégia de retry: 5xx/timeout -> tentar de novo (3 tentativas, com pausa).
+    for tentativa in range(3):
+        try:
+            resposta = requests.post(
+                URL,
+                headers={
+                    "Authorization": f"Bearer {chave}",
+                    "Content-Type": "application/json",
+                },
+                json=corpo,
+                timeout=60,
+            )
+        except requests.exceptions.RequestException as e:
+            # Erro de rede ou timeout: retry como em 5xx.
+            if tentativa < 2:
+                # 2s na primeira falha, 4s na segunda.
+                time.sleep(2 * (tentativa + 1))
+                continue
+            print(f"Erro de rede: {e}. Tente novamente mais tarde.", file=sys.stderr)
+            return None
+
+        # HTTP 429 — limite atingido: remove a pergunta e volta ao prompt.
+        if resposta.status_code == 429:
+            print("Limite atingido, espere um minuto.", file=sys.stderr)
+            # Remove a última pergunta (user) para não reenviar sem resposta.
+            if len(messages) > 1 and messages[-1]["role"] == "user":
+                messages.pop()
+            return None
+
+        # HTTP 5xx — retry com backoff.
+        if resposta.status_code in (500, 502, 503, 504):
+            if tentativa < 2:
+                time.sleep(2 * (tentativa + 1))
+                continue
+            print(f"Erro {resposta.status_code}: {resposta.text}. Tente novamente mais tarde.", file=sys.stderr)
+            return None
+
+        # Qualquer outro código de erro: informa e volta ao prompt.
+        if resposta.status_code != 200:
+            print(f"Erro HTTP {resposta.status_code}: {resposta.text}", file=sys.stderr)
+            return None
+
+        # Sucesso!
+        dados = resposta.json()
+        texto = dados["choices"][0]["message"]["content"].strip()
+        uso = dados.get("usage", {})
+        prompt_tokens = uso.get("prompt_tokens")
+        return texto, prompt_tokens
+
+    return None
 
 
 def main():
-    """R4 + R5 — O loop do chat.
+    # Valida a chave antes de qualquer coisa.
+    if not verificar_chave():
+        return 1
 
-    1. verifica a GEMINI_API_KEY; se faltar, explica como configurar (R6)
-    2. monta o system prompt e inicia a lista `messages` com ele
-    3. loop: lê a pergunta, adiciona em `messages`, envia a lista INTEIRA,
-       adiciona a resposta em `messages`, imprime o prompt_tokens (R4)
-    4. `/sair`, Ctrl+C e EOF encerram limpo (R5)
-    """
-    # TODO: implementar o loop conforme R4 e R5.
-    raise NotImplementedError("main — veja R4, R5 e R6 no SPEC.md")
+    material = carregar_material()
+    perfil = carregar_perfil()
+
+    # messages[0] é sempre o system prompt — a "memória" é só reenvio de tudo.
+    messages = [
+        {"role": "system", "content": montar_system_prompt(material, perfil)},
+    ]
+
+    while True:
+        try:
+            pergunta = input("Você: ").strip()
+        except EOFError:
+            # Fim de entrada (Ctrl+D ou pipe esgotado): sai limpo.
+            print()  # nova linha para não ficar grudado no prompt
+            break
+        except KeyboardInterrupt:
+            # Ctrl+C: sai limpo, sem traceback.
+            print()
+            break
+
+        if not pergunta:
+            continue
+
+        if pergunta == "/sair":
+            break
+
+        # Adiciona a pergunta do aluno ao histórico.
+        messages.append({"role": "user", "content": pergunta})
+
+        resultado = chamar_llm(messages)
+
+        # 429 ou outro erro recuperável: a pergunta já foi removida por
+        # chamar_llm; volta ao prompt.
+        if resultado is None:
+            continue
+
+        texto, prompt_tokens = resultado
+
+        # Adiciona a resposta do modelo — isso é a "memória".
+        messages.append({"role": "assistant", "content": texto})
+
+        print(f"Professor: {texto}")
+
+        # Contador de tokens: cresce a cada turno porque reenviamos tudo.
+        if prompt_tokens is not None:
+            print(f"(contexto enviado: {prompt_tokens} tokens)")
+        print()
+
+    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main() or 0)
+    sys.exit(main())
