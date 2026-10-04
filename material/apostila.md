@@ -65,6 +65,18 @@ Janela grande não é o mesmo que atenção boa. Informação enterrada no meio 
 contexto muito longo tende a ser menos usada do que a mesma informação colocada
 no início ou no fim.
 
+Na prática isso significa que **a qualidade cai conforme a janela enche**. Perto
+do limite, o modelo perde o que foi dito no meio da conversa, repete o que já
+fez e volta atrás em decisões tomadas. Ao mesmo tempo, cada nova mensagem fica
+mais cara, porque todo o histórico é reenviado.
+
+A técnica para contornar isso chama-se **handoff**: antes de chegar no limite,
+você pede um resumo do estado — o que já foi feito, o que falta, onde estão os
+arquivos, que decisões foram tomadas e por quê — e começa uma conversa nova com
+esse resumo no lugar do histórico inteiro. Você troca um contexto longo e
+degradado por um curto e denso. É o mesmo raciocínio da seção de custo: o que
+importa é o que está no contexto, não o quanto está.
+
 ## Memória é só reenvio de mensagens
 
 Aqui está a parte que mais surpreende: **o modelo não guarda nada entre
