@@ -11,55 +11,115 @@ a partir do material da sua matéria — e você entende cada linha dele.
 
 ---
 
-## Antes da aula: as duas chaves
+# Antes da aula
 
-Você precisa de duas chaves de API. As duas são **grátis** e **não pedem cartão**.
+São quatro passos. Faça **antes**, não no dia — os 45 minutos são para programar.
 
-### 1. `GEMINI_API_KEY` — para o código Python
+## 1. Pegue as duas chaves
 
-1. Entre em **https://aistudio.google.com/apikey**
-2. "Create API key"
-3. Copie a chave
+As duas são **grátis** e **não pedem cartão**.
 
-### 2. `OPENROUTER_API_KEY` — para o OpenCode
+| chave | onde | começa com |
+|---|---|---|
+| `GEMINI_API_KEY` | https://aistudio.google.com/apikey → "Create API key" | `AIza` |
+| `OPENROUTER_API_KEY` | https://openrouter.ai/keys → "Create API Key" | `sk-or-v1-` |
 
-1. Entre em **https://openrouter.ai/keys**
-2. Crie a conta e clique em "Create key"
-3. Copie a chave
+> A do OpenRouter **aparece uma vez só**. Se fechar sem copiar, apague e crie outra.
 
-### Guardar as chaves no GitHub
+## 2. Instale o que precisa
 
-Guarde as duas como **Codespaces secrets**, não num arquivo:
+**Python 3.9 ou mais novo** — confira com `python --version` (ou `python3 --version`).
+Se não tiver: https://www.python.org/downloads/
 
-1. Vá em **https://github.com/settings/codespaces**
-2. Em "Codespaces secrets" → **New secret**
-3. Crie `GEMINI_API_KEY` e dê acesso a este repositório
-4. Repita para `OPENROUTER_API_KEY`
+**Git** — confira com `git --version`. Se não tiver: https://git-scm.com/downloads
 
-> Nunca coloque uma chave dentro de um arquivo do repositório. Chave em commit é
-> chave vazada.
-
-## Abrir o Codespace
-
-No GitHub, neste repositório: botão verde **Code** → aba **Codespaces** → **Create
-codespace on main**.
-
-Se as chaves já estiverem nos secrets, o GitHub as injeta automaticamente. Se não,
-ele pede na tela de criação (é o campo `secrets` do `.devcontainer/devcontainer.json`).
-
-A primeira abertura leva alguns minutos: ele instala o Python, o `requests` e o
-OpenCode. Quando terminar, confira:
+**OpenCode:**
 
 ```bash
-opencode --version
-env | grep -c GEMINI_API_KEY
-env | grep -c OPENROUTER_API_KEY
+# macOS e Linux
+curl -fsSL https://opencode.ai/install | bash
 ```
 
-Os dois últimos comandos devem imprimir `1`. Se imprimirem `0`, a chave não
-chegou — veja "Problemas" no fim deste arquivo.
+```powershell
+# Windows (precisa de Node.js: https://nodejs.org)
+npm install -g opencode-ai
+```
+
+> O `npm install -g opencode-ai` também funciona em macOS e Linux, se você já
+> tiver Node e preferir.
+
+Confira: `opencode --version`
+
+## 3. Clone o repositório
+
+```bash
+git clone https://github.com/MaedaArthur/professor-ia.git
+cd professor-ia
+pip install -r requirements.txt
+```
+
+> Se `pip` não existir, tente `pip3`. Se der erro de permissão, use
+> `pip install --user -r requirements.txt`.
+
+## 4. Configure as chaves
+
+As chaves vivem em **variáveis de ambiente** — nunca dentro de um arquivo do
+repositório. Chave em commit é chave vazada.
+
+**macOS / Linux:**
+
+```bash
+export GEMINI_API_KEY='sua-chave-do-gemini'
+export OPENROUTER_API_KEY='sua-chave-do-openrouter'
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:GEMINI_API_KEY='sua-chave-do-gemini'
+$env:OPENROUTER_API_KEY='sua-chave-do-openrouter'
+```
+
+⚠️ **Isso vale só para a janela de terminal atual.** Fechou, sumiu.
+
+Para não repetir a cada aula, há duas saídas:
+
+<details>
+<summary><b>macOS / Linux: use um arquivo .env</b></summary>
+
+```bash
+cp .env.example .env
+# edite o .env e ponha as chaves
+
+# carregue sempre que abrir um terminal novo:
+set -a; . ./.env; set +a
+```
+
+O `.env` está no `.gitignore` — ele não vai para o repositório.
+</details>
+
+<details>
+<summary><b>Deixar permanente</b></summary>
+
+macOS/Linux: acrescente as linhas `export ...` no fim do seu `~/.bashrc` ou
+`~/.zshrc`, e abra um terminal novo.
+
+Windows: `[Environment]::SetEnvironmentVariable('GEMINI_API_KEY','sua-chave','User')`
+e abra um PowerShell novo.
+</details>
+
+## Confira que deu certo
+
+```bash
+python 01_chamada_minima.py
+```
+
+Se imprimir JSON e uma resposta, está tudo pronto. Se reclamar da chave, volte
+ao passo 4.
 
 ---
+
+# As aulas
 
 ## Aula 1 — é só um POST
 
@@ -76,15 +136,14 @@ Ele mostra o JSON que sai, o JSON que volta e a contagem de tokens. Olhe o
 opencode
 ```
 
-Dentro do OpenCode, aperte **Tab** até aparecer o agente **professor**. Então
-converse:
+Aperte **Tab** até aparecer o agente **professor**. Então converse:
 
 - "não entendi janela de contexto"
 - "resolve o exercício 2 da apostila"  ← ele vai recusar, de propósito
 - "o que eu te perguntei antes?"
 
-Seu perfil de aprendizado está em `perfil.md`. Edite-o e veja a diferença no jeito
-de explicar.
+Seu perfil de aprendizado está em `perfil.md`. Edite-o e veja a diferença no
+jeito de explicar.
 
 > O agente professor não escreve nem roda código — ele só ensina. Para programar,
 > volte com **Tab** para o agente **Build**.
@@ -94,10 +153,12 @@ de explicar.
 Leia o `SPEC.md`. Ele é a especificação do que você vai construir.
 
 ```bash
+git switch -c minha-versao    # trabalhe na sua própria branch
+rm professor.py               # começamos do zero
 opencode
 ```
 
-No agente **Build**, peça algo como:
+No agente **Build**, peça:
 
 > Leia o SPEC.md e o AGENTS.md. Planeje em 5 passos como implementar o
 > professor.py e me mostre o plano antes de escrever código.
@@ -109,12 +170,19 @@ terminal:
 printf 'o que é um token?\n/sair\n' | python professor.py
 ```
 
-Os critérios de aceite estão na seção 4 do `SPEC.md`. Terminou antes? A seção 5
-tem três extras.
+Os critérios de aceite estão na seção 4 do `SPEC.md`. Quando passar, guarde seu
+trabalho:
+
+```bash
+git add professor.py
+git commit -m "Meu professor de IA"
+```
+
+Terminou antes? A seção 5 do SPEC tem três extras.
 
 ---
 
-## Modelos
+# Modelos
 
 O OpenCode está configurado com um modelo gratuito em `opencode.json`:
 
@@ -122,8 +190,8 @@ O OpenCode está configurado com um modelo gratuito em `opencode.json`:
 "model": "openrouter/poolside/laguna-s-2.1:free"
 ```
 
-**Se ele estiver fora do ar ou lento**, troque por um destes (todos `:free` e todos
-com suporte a ferramentas, que o OpenCode exige):
+**Se ele estiver fora do ar ou lento**, troque por um destes (todos `:free` e
+todos com suporte a ferramentas, que o OpenCode exige):
 
 | modelo | observação |
 |---|---|
@@ -134,38 +202,36 @@ com suporte a ferramentas, que o OpenCode exige):
 
 Troque no `opencode.json` ou, dentro do OpenCode, com o comando `/models`.
 
-> A lista de modelos gratuitos do OpenRouter muda com frequência. A lista viva está
-> em **https://openrouter.ai/models?max_price=0** — filtre por "Tools" se o modelo
-> for usado pelo OpenCode.
+> A lista muda com frequência. A lista viva está em
+> **https://openrouter.ai/models?max_price=0** — filtre por "Tools".
 
-### Limite dos modelos gratuitos
+## Os limites
 
-Nos modelos `:free` do OpenRouter, uma conta sem créditos comprados tem:
+**OpenRouter**, modelos `:free`, conta sem crédito comprado:
+**20 requisições por minuto** e **50 por dia**.
 
-- **20 requisições por minuto**
-- **50 requisições por dia**
+Cada mensagem sua no OpenCode pode gastar **mais de uma** requisição — ele chama
+o modelo de novo a cada ferramenta que usa. Em teste, construir o `professor.py`
+inteiro do zero gastou **11 requisições**. Cabe, mas pense antes de mandar.
 
-Cada mensagem sua no OpenCode pode gastar **mais de uma** requisição (ele chama o
-modelo de novo a cada ferramenta que usa). Então: pense antes de mandar, e use
-mensagens com contexto em vez de muitas mensagens curtas.
+Acompanhe em **https://openrouter.ai/activity**.
 
-Acompanhe o seu gasto em **https://openrouter.ai/activity**.
-
-Se bater o limite, você verá um erro **429**. Espere um minuto (ou até o dia
-seguinte, se foi o limite diário) ou troque de modelo.
+**Gemini**, free tier: o limite é **por minuto** e é baixo — três perguntas
+seguidas já podem dar erro `429`. O `professor.py` espera e tenta de novo
+sozinho. Se insistir, espere um minuto.
 
 ---
 
-## ⚠️ Privacidade: não coloque dado pessoal
+# ⚠️ Privacidade: não coloque dado pessoal
 
 No **nível gratuito** da API do Gemini, os termos do Google dizem que o conteúdo
-que você envia é usado para treinar e melhorar os produtos deles — e que
-**revisores humanos podem ler** a entrada e a saída da API.
+enviado é usado para treinar e melhorar os produtos deles — e que **revisores
+humanos podem ler** a entrada e a saída da API.
 
 Os próprios termos dizem: *"Do not submit sensitive, confidential, or personal
 information to the Unpaid Services."*
 
-Na prática, para este workshop:
+Na prática:
 
 - **Não** coloque nome completo, matrícula, e-mail, CPF ou telefone no `perfil.md`.
 - **Não** cole prova, trabalho não publicado, laudo, contrato ou dado de empresa.
@@ -176,31 +242,36 @@ Termos completos: https://ai.google.dev/gemini-api/terms
 
 ---
 
-## Problemas
+# Problemas
 
 **`opencode: command not found`**
-O binário fica em `~/.opencode/bin`. Rode `export PATH="$HOME/.opencode/bin:$PATH"`.
-Se persistir, o `postCreateCommand` falhou: veja o log em **Codespaces: View Creation
-Log** na paleta de comandos (`Ctrl+Shift+P`).
+No macOS/Linux o binário fica em `~/.opencode/bin`. Rode
+`export PATH="$HOME/.opencode/bin:$PATH"` e, para não repetir, ponha essa linha
+no seu `~/.bashrc` ou `~/.zshrc`. Se instalou pelo npm, confira com `npm list -g`.
 
-**`env | grep -c GEMINI_API_KEY` imprime `0`**
-O secret não chegou. Confira em https://github.com/settings/codespaces que o
-secret existe **e** que este repositório está na lista de acesso dele. Depois
-**recrie o Codespace** — secret novo não entra em Codespace já criado.
+**`python: command not found`**
+Tente `python3`. No Windows, reinstale o Python marcando "Add Python to PATH".
 
-**O OpenCode pede para fazer login num provedor**
-Não deveria: ele lê a `OPENROUTER_API_KEY` do ambiente. Se a variável estiver
-vazia, ele não acha credencial. Confira o `echo` acima. Em último caso, dentro do
-OpenCode use `/connect` e cole a chave do OpenRouter na mão.
+**`ModuleNotFoundError: No module named 'requests'`**
+Faltou o passo 3: `pip install -r requirements.txt`.
+
+**`Falta a GEMINI_API_KEY`**
+A variável não está no terminal atual. Refaça o passo 4 — e lembre que ela some
+quando você fecha o terminal.
 
 **Erro 429 no `professor.py`**
-Limite do Gemini. Espere um minuto e tente de novo.
+Limite por minuto do Gemini. O programa já espera e tenta de novo. Se insistir,
+espere um minuto.
 
 **Erro 503 "high demand" no `professor.py`**
 O modelo do Google está sobrecarregado — não é problema seu nem da sua chave.
-O programa repete a chamada sozinho até 3 vezes. Se insistir, troque de modelo:
+O programa repete sozinho. Se insistir, troque de modelo:
 `GEMINI_MODEL=gemini-flash-lite-latest python professor.py`
 
+**O OpenCode pede para fazer login num provedor**
+Ele lê a `OPENROUTER_API_KEY` do ambiente. Se a variável não estiver no terminal
+atual, ele não acha credencial — refaça o passo 4. Em último caso, dentro do
+OpenCode use `/connect` e cole a chave na mão.
+
 **O professor me deu a resposta do exercício**
-Acontece com modelo pequeno. Reforce a regra 1 no system prompt do `professor.py`
-(ou em `.opencode/agents/professor.md`, na aula 2) e repita o teste.
+Acontece com modelo pequeno. Reforce a regra 1 no system prompt e repita o teste.

@@ -65,7 +65,7 @@ inteira foi reenviada**. Algo como:
 
 | situação | comportamento |
 |---|---|
-| `GEMINI_API_KEY` ausente ou vazia | mensagem clara dizendo **como configurar** (secret do Codespace ou `export`), e sair com código != 0 |
+| `GEMINI_API_KEY` ausente ou vazia | mensagem clara dizendo **como configurar** (o comando `export`/`$env:` do sistema dele), e sair com código != 0 |
 | HTTP 429 (limite atingido) | **esperar e repetir**: 20s, depois 40s. Se ainda falhar, avisar "limite atingido, espere um minuto", **remover a pergunta do histórico** (para não reenviar uma pergunta sem resposta) e voltar ao prompt sem quebrar |
 | HTTP 500/502/**503**/504 | **repetir a chamada** até 3 vezes, esperando 2s e depois 4s. Se ainda falhar, avisar e voltar ao prompt |
 | outro erro HTTP | mostrar status e corpo da resposta, voltar ao prompt |

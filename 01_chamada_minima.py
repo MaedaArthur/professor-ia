@@ -30,9 +30,10 @@ def main():
     if not chave:
         print("Falta a GEMINI_API_KEY.", file=sys.stderr)
         print("", file=sys.stderr)
-        print("No Codespace: adicione o secret GEMINI_API_KEY e recrie o Codespace.", file=sys.stderr)
-        print("No seu terminal: export GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
-        print("Gere uma chave grátis em https://aistudio.google.com/apikey", file=sys.stderr)
+        print("macOS/Linux:  export GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
+        print("Windows:      $env:GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("Gere uma chave gratis em https://aistudio.google.com/apikey", file=sys.stderr)
         return 1
 
     # Este dicionário é tudo o que o modelo recebe. Mais nada.
