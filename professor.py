@@ -30,13 +30,14 @@ CAMINHO_PERFIL = "perfil.md"
 
 AJUDA_CHAVE = """Falta a GEMINI_API_KEY.
 
-No Codespace:
-  1. vá em https://github.com/settings/codespaces
-  2. crie o secret GEMINI_API_KEY e libere este repositório
-  3. recrie o Codespace (secret novo não entra em Codespace já aberto)
-
-No seu terminal:
+macOS / Linux:
   export GEMINI_API_KEY='sua-chave-aqui'
+
+Windows (PowerShell):
+  $env:GEMINI_API_KEY='sua-chave-aqui'
+
+Isso vale só para esta janela de terminal. Para não repetir, veja a seção
+"Configure as chaves" do README.
 
 Gere uma chave grátis em https://aistudio.google.com/apikey"""
 
