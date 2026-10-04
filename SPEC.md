@@ -71,6 +71,13 @@ inteira foi reenviada**. Algo como:
 | outro erro HTTP | mostrar status e corpo da resposta, voltar ao prompt |
 | erro de rede / timeout | repetir como no 5xx; se insistir, avisar e voltar ao prompt |
 
+**Regra geral, vale para todos os erros acima:** quando um turno falha, a
+pergunta do aluno **tem que sair do histórico**. Ela entrou na lista antes da
+chamada; se ficar lá sem resposta, duas coisas quebram: o histórico passa a ter
+duas mensagens `user` seguidas, e a pergunta que falhou é reenviada em toda
+requisição seguinte, inflando o contexto para sempre. É fácil tratar só o 429 e
+esquecer dos outros — não esqueça.
+
 > Nem o 503 nem o 429 são hipotéticos. O Gemini responde `"This model is
 > currently experiencing high demand"` em horário de pico, e o limite por
 > minuto do free tier estoura com três perguntas seguidas. Sem repetir, boa
