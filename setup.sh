@@ -331,7 +331,7 @@ perguntar_chave OPENROUTER_API_KEY "https://openrouter.ai/keys"         "sk-or-v
 printf '\n'
 info "O .env está no .gitignore: ele não vai para o repositório. Mesmo assim,"
 info "nunca cole uma chave em commit, print, slide ou mensagem."
-info "Para carregar as chaves num terminal novo:  set -a; . ./.env; set +a"
+info "Os scripts Python leem o .env sozinhos: não precisa exportar nada."
 
 # ------------------------------------------------------------ 6. teste real --
 

@@ -13,6 +13,13 @@ import sys
 
 import requests
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()  # lê o .env da raiz: nenhum export à mão, em nenhum terminal
+except ImportError:
+    pass  # sem python-dotenv, vale o que já estiver no ambiente
+
 # A URL é configurável de propósito: o mesmo código funciona com OpenRouter
 # trocando só LLM_URL e a chave. Este é o endpoint do Gemini compatível com
 # o formato da OpenAI.
@@ -30,6 +37,10 @@ def main():
     if not chave:
         print("Falta a GEMINI_API_KEY.", file=sys.stderr)
         print("", file=sys.stderr)
+        print("Preencha a GEMINI_API_KEY no .env da raiz: o programa lê esse", file=sys.stderr)
+        print("arquivo sozinho. Se o .env não existir:  cp .env.example .env", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("Se preferir, ainda vale exportar na mão nesta janela:", file=sys.stderr)
         print("macOS/Linux:  export GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
         print("Windows:      $env:GEMINI_API_KEY='sua-chave-aqui'", file=sys.stderr)
         print("", file=sys.stderr)

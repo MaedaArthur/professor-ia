@@ -443,8 +443,8 @@ PerguntarChave 'OPENROUTER_API_KEY' 'https://openrouter.ai/keys'         'sk-or-
 Write-Host ''
 Info 'O .env esta no .gitignore: ele nao vai para o repositorio. Mesmo assim,'
 Info 'nunca cole uma chave em commit, print, slide ou mensagem.'
-Info 'Para usar as chaves num PowerShell novo, sem repetir a cada aula:'
-Info '  [Environment]::SetEnvironmentVariable(''GEMINI_API_KEY'',''sua-chave'',''User'')'
+Info 'Os scripts Python leem o .env sozinhos: nao precisa definir $env: na mao,'
+Info 'nem repetir nada num PowerShell novo.'
 
 # ----------------------------------------------------------- 6. teste real
 

@@ -15,7 +15,8 @@ escrever qualquer linha e siga-o.
 
 ## Regras técnicas
 
-- **Python 3.9 ou mais novo.** Apenas `requests` + biblioteca padrão.
+- **Python 3.9 ou mais novo.** Apenas `requests` + `python-dotenv` + biblioteca
+  padrão: o `python-dotenv` só carrega o `.env`, não é framework de LLM.
   (o código roda na máquina do aluno, então não assuma uma versão nova)
 - **Sem frameworks de LLM.** Nada de LangChain, LlamaIndex, SDK do OpenAI ou do
   Google. A chamada é um `requests.post` cru — isso é didático, não é descuido.

@@ -1,7 +1,8 @@
 # Professor de IA, workshop
 
-Um encontro só, de 135 minutos, contínuo. No fim você tem um professor de IA que
-estuda com você a partir do material da sua matéria, e entende cada linha dele.
+Um encontro de 135 minutos, lido como três aulas de 45. No fim você tem um
+professor de IA que estuda com você a partir do material da sua matéria, e
+entende cada linha dele.
 
 Ao longo do encontro você vai, nesta ordem:
 
@@ -11,13 +12,18 @@ Ao longo do encontro você vai, nesta ordem:
   a partir do `SPEC.md`;
 - testar o que saiu contra os critérios de aceite do SPEC.
 
-Não há divisão em partes nem intervalo marcado no material. É um fio só.
+As três aulas são marcas de respiro, não capítulos: o material é um fio
+contínuo, sem capa de ato e sem numeração que reinicia.
 
 ---
 
 # Antes do encontro
 
 Faça o setup **antes**, não no dia. O tempo do encontro é para programar.
+
+O passo a passo completo está no **`SETUP.md`**, na raiz do repositório: é o
+arquivo que você recebe antes da aula, para fazer em casa. O resumo abaixo cobre
+o mesmo caminho.
 
 São três coisas: pegar as duas chaves, clonar o repositório e rodar o script de
 setup.
@@ -65,7 +71,8 @@ O script faz o seguinte, nesta ordem:
 
 1. confere se você tem **Python 3.9 ou mais novo** e **Git**, e diz onde baixar
    se faltar algum;
-2. instala a dependência do projeto (`requirements.txt`, que é só o `requests`);
+2. instala as dependências do projeto (`requirements.txt`: o `requests` e o
+   `python-dotenv`);
 3. instala o **OpenCode**;
 4. pede as duas chaves de API, uma por vez, e grava as duas no arquivo `.env`.
 
@@ -108,59 +115,59 @@ Confira com `opencode --version`.
 
 ### As chaves
 
-As chaves vivem em **variáveis de ambiente**, nunca dentro de um arquivo do
-repositório.
-
-**macOS / Linux:**
+As chaves moram no arquivo `.env`, na raiz do repositório. É o que o script de
+setup preenche sozinho, perguntando as duas. Para fazer na mão, copie o modelo e
+edite:
 
 ```bash
+cp .env.example .env
+# edite o .env e ponha as duas chaves
+```
+
+O arquivo fica assim, com as suas chaves no lugar dos pontinhos:
+
+```txt
+GEMINI_API_KEY=AIza...
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+Os scripts Python deste repositório leem o `.env` sozinhos (pelo
+`python-dotenv`), então não há nada para exportar.
+
+</details>
+
+## 4. Confira o `.env`
+
+As duas chaves ficam no arquivo `.env`, na raiz do projeto, e o script de setup
+já gravou as duas lá. Os scripts Python deste repositório leem esse arquivo
+sozinhos, pelo `python-dotenv`: **não precisa exportar nada, em nenhum
+terminal.** Basta rodar de dentro da pasta do projeto.
+
+Abra o `.env` e confira que as duas linhas estão preenchidas, uma chave por
+linha, sem espaço em volta do sinal de igual:
+
+```txt
+GEMINI_API_KEY=AIza...
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+<details>
+<summary><b>Se você preferir exportar a variável à mão</b></summary>
+
+Ainda funciona, e tem precedência sobre o `.env`. Não é mais o caminho
+recomendado, porque vale só para a janela de terminal atual: fechou, sumiu.
+
+```bash
+# macOS e Linux
 export GEMINI_API_KEY='sua-chave-do-gemini'
 export OPENROUTER_API_KEY='sua-chave-do-openrouter'
 ```
 
-**Windows (PowerShell):**
-
 ```powershell
+# Windows (PowerShell)
 $env:GEMINI_API_KEY='sua-chave-do-gemini'
 $env:OPENROUTER_API_KEY='sua-chave-do-openrouter'
 ```
-
-Para não digitar isso toda vez, no macOS e no Linux copie o modelo de arquivo de
-chaves e preencha:
-
-```bash
-cp .env.example .env
-# edite o .env e ponha as chaves
-```
-
-</details>
-
-## 4. Carregue as chaves no terminal
-
-⚠️ **Variável de ambiente vale só para a janela de terminal atual.** Fechou,
-sumiu. Isso vale também para as chaves que o script gravou no `.env`: o arquivo
-fica guardado, mas cada terminal novo precisa carregá-lo.
-
-**macOS / Linux**, em todo terminal novo, de dentro da pasta do projeto:
-
-```bash
-set -a; . ./.env; set +a
-```
-
-<details>
-<summary><b>Deixar permanente, para não carregar a cada vez</b></summary>
-
-macOS e Linux: acrescente as linhas `export ...` no fim do seu `~/.bashrc` ou
-`~/.zshrc`, e abra um terminal novo.
-
-Windows:
-
-```powershell
-[Environment]::SetEnvironmentVariable('GEMINI_API_KEY','sua-chave','User')
-[Environment]::SetEnvironmentVariable('OPENROUTER_API_KEY','sua-chave','User')
-```
-
-Depois abra um PowerShell novo.
 </details>
 
 ## 5. Confira que deu certo
@@ -170,7 +177,8 @@ python 01_chamada_minima.py
 ```
 
 Se imprimir um JSON e uma resposta do modelo, está pronto. Se reclamar da chave,
-volte ao passo 4: provavelmente a variável não está neste terminal.
+volte ao passo 4: provavelmente a chave não está no `.env`, ou você está rodando
+de fora da pasta do projeto.
 
 ---
 
@@ -179,16 +187,19 @@ volte ao passo 4: provavelmente a variável não está neste terminal.
 ```
 professor-ia/
 ├── README.md                     este guia, o que você está lendo agora
+├── SETUP.md                      o setup que você faz em casa, antes da aula
 ├── SPEC.md                       a especificação do professor.py, a fonte da verdade
 ├── AGENTS.md                     contexto técnico do repo, o OpenCode lê sozinho
+├── handoff.md                    um handoff de verdade, para você ler como exemplo
 ├── setup.sh                      setup automático no macOS e no Linux
 ├── setup.ps1                     setup automático no Windows
-├── requirements.txt              a única dependência Python, o requests
+├── requirements.txt              as dependências Python: requests e python-dotenv
 ├── opencode.json                 configuração do OpenCode: modelo e permissões
 ├── .env.example                  modelo do arquivo de chaves, copie para .env
 ├── .gitignore                    o que o Git não deve subir, o .env está nele
 ├── 01_chamada_minima.py          uma requisição HTTP crua ao modelo, o exemplo de partida
 ├── professor.py                  o professor pronto, que você vai apagar e reescrever
+├── professor_extras.py           o mesmo professor, com uma ferramenta a mais
 ├── perfil.md                     seu perfil de aprendizado, fictício de propósito
 ├── material/
 │   └── apostila.md               o conteúdo da matéria que o professor usa
@@ -212,8 +223,12 @@ professor-ia/
 
 ## slides/
 
-O deck do workshop é o `slides/deck.html`. É um arquivo único: abra no navegador,
-sem servidor e sem instalar nada.
+**A pasta `slides/` entra no repositório na hora da aula.** Antes disso ela não
+existe no seu clone, e isso é de propósito: o deck é a aula. Para fazer o setup
+em casa você usa o `SETUP.md` e o `SETUP.pdf`, que já estão aqui.
+
+Depois da aula, um `git pull` traz o deck. O arquivo é o `slides/deck.html`, um
+arquivo único: abra no navegador, sem servidor e sem instalar nada.
 
 - as **setas** navegam, avançando passo a passo dentro do slide antes de trocar;
 - a tecla **`p`** monta o deck paginado e abre o diálogo de impressão, que é como
@@ -373,8 +388,9 @@ Tente `python3`. No Windows, reinstale o Python marcando "Add Python to PATH".
 As dependências não foram instaladas. Rode `pip install -r requirements.txt`.
 
 **`Falta a GEMINI_API_KEY`**
-A variável não está no terminal atual. Refaça o passo 4, e lembre que ela some
-quando você fecha o terminal.
+A chave não está no `.env`, ou você está rodando de fora da pasta do projeto.
+Confira o passo 4. Rodar o script de setup de novo também resolve: ele pergunta
+a chave e grava.
 
 **Erro 429 no `professor.py`**
 Limite por minuto do Gemini. O programa já espera e tenta de novo. Se insistir,
@@ -386,9 +402,10 @@ O programa repete sozinho. Se insistir, troque de modelo:
 `GEMINI_MODEL=gemini-flash-lite-latest python professor.py`
 
 **O OpenCode pede para fazer login num provedor**
-Ele lê a `OPENROUTER_API_KEY` do ambiente. Se a variável não estiver no terminal
-atual, ele não acha credencial, refaça o passo 4. Em último caso, dentro do
-OpenCode use `/connect` e cole a chave na mão.
+Ele usa a `OPENROUTER_API_KEY`. Confira que ela está preenchida no `.env`
+(passo 4). O OpenCode é um programa separado, não um script deste repositório:
+se ele continuar pedindo, exporte a chave neste terminal ou, dentro do OpenCode,
+use `/connect` e cole a chave na mão.
 
 **O professor me deu a resposta do exercício**
 Acontece com modelo pequeno. Reforce a regra 1 no system prompt e repita o teste.

@@ -18,6 +18,13 @@ import sys
 
 import requests
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()  # lê o .env da raiz: nenhum export à mão, em nenhum terminal
+except ImportError:
+    pass  # sem python-dotenv, vale o que já estiver no ambiente
+
 # --- Configuração -----------------------------------------------------------
 # A URL é configurável para o mesmo código funcionar com outro provedor
 # (OpenRouter, por exemplo) trocando só esta variável e a chave.
