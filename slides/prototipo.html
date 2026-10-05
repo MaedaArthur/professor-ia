@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workshop IA: protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:      #F6F3EC;
+    --paper-up:   #FBF9F4;
+    --ink:        #1B1A17;
+    --ink-soft:   #6E6657;
+    --ink-faint:  #B5AE9E;
+    --rule:       #D8D2C4;
+    --rule-soft:  #E3DED2;
+    --accent:     #9C3B28;
+    --accent-dim: #C9A295;
+    --dark:       #1C1B18;
+    --dark-text:  #EDE8DC;
+    --dark-mute:  #9A9484;
+    --dark-key:   #9FC8E8;
+    --dark-str:   #C9DC9B;
+
+    --sans: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --pad-x: 80px;
+    --pad-t: 60px;
+    --pad-b: 44px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #E8E4DA;
+    font-family: var(--sans);
+    color: var(--ink);
+    overflow: hidden;
+  }
+
+  #viewport {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  #stage {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: var(--paper);
+    transform-origin: center center;
+    overflow: hidden;
+  }
+
+  /* ───────────── chrome: cabeçalho e trilha ───────────── */
+
+  #head {
+    position: absolute;
+    left: var(--pad-x);
+    right: var(--pad-x);
+    top: var(--pad-t);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+  }
+
+  #track {
+    position: absolute;
+    left: var(--pad-x);
+    right: var(--pad-x);
+    bottom: var(--pad-b);
+    border-top: 1px solid #C9C2B2;
+    padding-top: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    letter-spacing: 0.07em;
+    color: var(--ink-soft);
+  }
+
+  #stations { display: flex; }
+  .station {
+    position: relative;
+    padding-right: 76px;
+    transition: color .34s ease, font-weight .34s ease;
+  }
+  .station::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -17px;
+    width: 1px;
+    height: 7px;
+    background: #C9C2B2;
+    transition: background .34s ease, width .34s ease;
+  }
+  .station.on { color: var(--accent); font-weight: 600; }
+  .station.on::before { background: var(--accent); width: 2px; }
+
+  /* ───────────── o mascote ───────────── */
+
+  #mascot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100px;
+    height: 100px;
+    margin-left: -50px;
+    margin-top: -50px;
+    pointer-events: none;
+    transform: translate(var(--mx, 200px), var(--my, 600px)) scale(var(--ms, 0.56));
+    transition: transform .46s cubic-bezier(.46,.03,.34,1);
+    z-index: 5;
+  }
+  #mascot.hidden { opacity: 0; }
+  #mascot { transition: transform .46s cubic-bezier(.46,.03,.34,1), opacity .3s ease; }
+
+  #arc { transform: translateY(0); }
+  #mascot.travelling #arc { animation: arc .46s cubic-bezier(.46,.03,.34,1); }
+  @keyframes arc {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-38px); }
+    100% { transform: translateY(0); }
+  }
+
+  #mascot svg { display: block; width: 100px; height: 100px; overflow: visible; }
+
+
+  #tanglePath {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke .34s ease;
+  }
+  .eye { fill: var(--ink); transition: fill .34s ease, opacity .13s ease; }
+  #mascot.balled .eye { opacity: 0; }
+  #mascot.hot #tanglePath { stroke: var(--accent); }
+  #mascot.hot .eye { fill: var(--accent); }
+
+
+  /* ───────────── corpo do slide ───────────── */
+
+  #slide {
+    position: absolute;
+    left: var(--pad-x);
+    right: var(--pad-x);
+    top: 118px;
+    bottom: 104px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 54px;
+    line-height: 1.16;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    max-width: 920px;
+  }
+  h1 .soft { font-weight: 400; color: var(--ink); display: block; margin-bottom: 26px; font-size: 44px; }
+  h1 .hot  { color: var(--accent); }
+
+  h2 {
+    margin: 0 0 26px;
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.018em;
+  }
+
+  p.lede { margin: 0; font-size: 22px; line-height: 1.5; color: var(--ink-soft); max-width: 760px; }
+
+  blockquote {
+    margin: 0;
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    font-size: 28px;
+    line-height: 1.38;
+    font-weight: 500;
+    max-width: 880px;
+  }
+
+  pre {
+    margin: 0;
+    background: var(--dark);
+    border-radius: 3px;
+    padding: 26px 30px;
+    font-family: var(--mono);
+    font-size: 17px;
+    line-height: 1.72;
+    color: var(--dark-text);
+    overflow: hidden;
+    tab-size: 2;
+  }
+  pre .k { color: var(--dark-key); }
+  pre .s { color: var(--dark-str); }
+  pre .p { color: var(--dark-mute); }
+  pre .c { color: var(--dark-mute); font-style: italic; }
+  pre .cap {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dark-mute);
+    margin-bottom: 15px;
+  }
+
+  .step { opacity: 0; transform: translateY(7px); transition: opacity .3s ease, transform .3s ease; }
+  .step.in { opacity: 1; transform: none; }
+
+  /* progressão */
+  .prog { display: flex; gap: 72px; align-items: center; }
+  .prog-rows {
+    flex: 0 0 566px;
+    font-family: var(--mono);
+    font-size: 25px;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+  .row { display: flex; align-items: baseline; gap: 10px; }
+  .row .lbl  { white-space: nowrap; }
+  .row .lead { flex-grow: 1; min-width: 44px; border-bottom: 1px dotted var(--ink-faint); transform: translateY(-6px); }
+  .row .val  { width: 92px; text-align: right; }
+  .row.hot { color: var(--accent); font-weight: 600; }
+  .row.hot .lead { border-color: var(--accent-dim); }
+  .prog-note { font-family: var(--sans); margin: 24px 0 0; font-size: 23px; font-weight: 500; letter-spacing: -0.012em; }
+  .prog-stage { flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .mascot-slot { width: 240px; height: 240px; }
+  .prog-cap { font-family: var(--mono); font-size: 14px; color: var(--ink-soft); text-align: center; }
+
+  /* código lado a lado */
+  .split { display: flex; gap: 52px; align-items: center; }
+  .split .left { flex: 0 0 340px; display: flex; flex-direction: column; gap: 20px; }
+  .split .right { flex-grow: 1; min-width: 0; }
+
+  /* "o que você leva" */
+  .leva { border: 1px solid var(--rule); background: var(--paper-up); padding: 32px 36px; }
+  .leva h2 { margin-bottom: 18px; }
+
+  #hint {
+    position: fixed;
+    right: 14px;
+    bottom: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #9A9281;
+    letter-spacing: 0.06em;
+  }
+
+  /* ───────────── impressão ───────────── */
+  @page { size: 1280px 720px; margin: 0; }
+  @media print {
+    html, body { overflow: visible; background: #fff; height: auto; }
+    #viewport { position: static; display: block; }
+    #hint { display: none; }
+    #stage { page-break-after: always; break-after: page; }
+  }
+  body.printing { overflow: auto; background: #E8E4DA; }
+  body.printing #viewport { position: static; display: block; padding: 24px 0; }
+  body.printing #stage { margin: 0 auto 24px; }
+</style>
+</head>
+<body>
+
+<div id="viewport"><div id="stage">
+  <div id="head"><span id="head-l"></span><span id="head-r">ensaio 04/10</span></div>
+  <div id="slide"></div>
+  <div id="track">
+    <div id="stations">
+      <span class="station" data-piece="prompt">prompt</span>
+      <span class="station" data-piece="memoria">memória</span>
+      <span class="station" data-piece="ferramentas">ferramentas</span>
+      <span class="station" data-piece="loop">loop</span>
+    </div>
+    <span id="pageno"></span>
+  </div>
+
+  <div id="mascot">
+    <div id="arc">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <g class="tangle">
+          <path id="tanglePath"></path>
+          <circle class="eye" cx="43" cy="46" r="3.1"></circle>
+          <circle class="eye" cx="57" cy="46" r="3.1"></circle>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div></div>
+
+<div id="hint">← → navega · p imprime tudo · r recomeça</div>
+
+<script id="source" type="text/x-slides">
+@type: retomada
+@n: 46
+# Onde paramos
+::lede:: Semana passada a aula terminou com um furo aberto.
+::quote:: O modelo não guarda nada entre requisições.
+
+===
+@type: pergunta
+@n: 47
+@piece: memoria
+@soft: O modelo não guarda nada entre requisições.
+# Então como ele lembrou?
+
+===
+@type: mecanismo
+@n: 48
+@piece: memoria
+## A lista cresce a cada volta
+```txt
+requisição 1  ->  [sistema, pergunta_1]
+requisição 2  ->  [sistema, pergunta_1, resposta_1, pergunta_2]
+requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
+```
+::step:: Toda requisição reenvia tudo que veio antes. A memória não está no modelo, está na sua lista.
+
+===
+@type: progressao
+@n: 49
+@piece: memoria
+@setup: sistema 500 tokens · turnos de 100
+::row:: turno 1 | 600 | 1.5
+::row:: turno 2 | 800 | 2.1
+::row:: turno 3 | 1000 | 2.7
+::row:: turno 10 | 2400 | 4.2 | hot
+::note:: cresce com o <b>quadrado</b> de N
+::row:: apostila inteira | 2154 | 5.4 | hot
+::row:: com busca por seção | 1667 | 2.3
+::note:: −23%, medido em ensaio
+
+===
+@type: pergunta
+@n: 67
+@piece: ferramentas
+@soft: Um modelo só produz texto. Não lê arquivo, não acessa internet.
+# Então como ele leu o perfil.md?
+
+===
+@type: codigo
+@n: 68
+@piece: ferramentas
+## A declaração
+::lede:: Nome, descrição, argumentos. É tudo o que o modelo recebe.
+```json
+{
+  "name": "buscar_material",
+  "description": "Busca uma seção da apostila",
+  "parameters": { "consulta": "string" }
+}
+```
+::quote:: O modelo não buscou nada. Ele escreveu um <b>pedido</b>, em texto, no formato combinado.
+
+===
+@type: mecanismo
+@n: 74
+@piece: loop
+## Um while, uma lista e um if
+```py
+repita:
+    mande o histórico para o modelo
+    ele pediu ferramenta?
+        não  -> é a resposta final, mostre e saia
+        sim  -> execute, ponha o resultado no histórico, repita
+```
+::step:: Cada volta é uma requisição cobrada. E o loop precisa de um teto de voltas.
+
+===
+@type: leva
+@n: 80
+@piece: loop
+## O que você leva daqui
+::lede:: Dê contexto antes de pedir. Peça plano antes de código. Leia o diff. Uma tarefa por sessão.
+::quote:: E não trabalhe no fim da janela de contexto, você já viu por quê.
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ─────────── o rabisco, gerado ───────────
+     Orbita um miolo protegido: o raio nunca cai abaixo de R_MIN,
+     então o centro onde moram os olhos fica livre em qualquer densidade.
+     Os olhos ficam a ~8px do centro; a borda interna do traço, a ~17px. */
+
+  var CX = 50, CY = 50, R0 = 29, AMP = 8.6, R_MIN = 19;
+
+  function scribble(loops, k) {
+    k = (k === undefined) ? 1 : k;
+    var turns = Math.max(1, loops);
+    var steps = Math.max(90, Math.round(turns * 54));
+    var d = '';
+    for (var i = 0; i <= steps; i++) {
+      var th = (i / steps) * turns * Math.PI * 2;
+      var r = R0 + Math.sin(th * 2.6) * AMP + Math.sin(th * 1.7 + 1.1) * 2.3;
+      if (r < R_MIN) r = R_MIN;
+      r *= k;
+      var x = CX + Math.cos(th) * r;
+      var y = CY + Math.sin(th) * r * 0.93;
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+    }
+    return d.trim();
+  }
+
+  /* ─────────── parser ─────────── */
+
+  function parse(src) {
+    return src.trim().split(/^===$/m).map(function (chunk) {
+      var slide = { type: 'mecanismo', n: '', piece: '', blocks: [], rows: [], meta: {} };
+      var lines = chunk.replace(/\r/g, '').split('\n');
+      var inFence = false, fence = null;
+
+      lines.forEach(function (line) {
+        if (inFence) {
+          if (/^```\s*$/.test(line)) { slide.blocks.push(fence); inFence = false; fence = null; }
+          else fence.code.push(line);
+          return;
+        }
+        var m;
+        if ((m = line.match(/^```(\w*)\s*$/))) { inFence = true; fence = { kind: 'code', lang: m[1] || 'txt', code: [] }; return; }
+        if ((m = line.match(/^@(\w+):\s*(.*)$/))) {
+          var k = m[1], v = m[2].trim();
+          if (k === 'type') slide.type = v;
+          else if (k === 'n') slide.n = v;
+          else if (k === 'piece') slide.piece = v;
+          else slide.meta[k] = v;
+          return;
+        }
+        if ((m = line.match(/^::row::\s*(.*)$/))) {
+          var parts = m[1].split('|').map(function (s) { return s.trim(); });
+          slide.rows.push({ kind: 'row', label: parts[0], value: parts[1], loops: parseFloat(parts[2]) || 2, hot: parts[3] === 'hot' });
+          return;
+        }
+        if ((m = line.match(/^::note::\s*(.*)$/))) { slide.rows.push({ kind: 'note', text: m[1] }); return; }
+        if ((m = line.match(/^::step::\s*(.*)$/))) { slide.blocks.push({ kind: 'step', text: m[1] }); return; }
+        if ((m = line.match(/^::lede::\s*(.*)$/))) { slide.blocks.push({ kind: 'lede', text: m[1] }); return; }
+        if ((m = line.match(/^::quote::\s*(.*)$/))) { slide.blocks.push({ kind: 'quote', text: m[1] }); return; }
+        if ((m = line.match(/^#\s+(.*)$/)))  { slide.blocks.push({ kind: 'h1', text: m[1] }); return; }
+        if ((m = line.match(/^##\s+(.*)$/))) { slide.blocks.push({ kind: 'h2', text: m[1] }); return; }
+      });
+      return slide;
+    }).filter(function (s) { return s.blocks.length || s.rows.length; });
+  }
+
+  /* ─────────── realce de código, mínimo ─────────── */
+
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function highlight(code, lang) {
+    var out = esc(code);
+    if (lang === 'json') {
+      out = out.replace(/"([^"]*)"(\s*:)/g, '<span class="k">"$1"</span>$2')
+               .replace(/:\s*"([^"]*)"/g, ': <span class="s">"$1"</span>')
+               .replace(/([{}\[\],])/g, '<span class="p">$1</span>');
+    } else if (lang === 'py') {
+      out = out.replace(/\b(repita|não|sim|se|enquanto|retorne)\b/g, '<span class="k">$1</span>')
+               .replace(/(-&gt;)/g, '<span class="p">$1</span>');
+    } else {
+      out = out.replace(/(-&gt;)/g, '<span class="p">$1</span>')
+               .replace(/(\[|\])/g, '<span class="p">$1</span>');
+    }
+    return out;
+  }
+
+  /* ─────────── render ─────────── */
+
+  var SLIDES = parse(document.getElementById('source').textContent);
+  var slideEl   = document.getElementById('slide');
+  var headL     = document.getElementById('head-l');
+  var pageNo    = document.getElementById('pageno');
+  var mascot    = document.getElementById('mascot');
+  var tanglePath = document.getElementById('tanglePath');
+  var stations  = Array.prototype.slice.call(document.querySelectorAll('.station'));
+
+  var PIECE_LABEL = { prompt: 'prompt', memoria: 'memória', ferramentas: 'ferramentas', loop: 'loop' };
+  var si = 0, step = 0;
+
+  function slideHTML(s) {
+    var h = '';
+
+    if (s.type === 'progressao') {
+      h += '<div class="prog"><div>';
+      if (s.meta.setup) h += '<p style="margin:0 0 22px;font-family:var(--mono);font-size:14px;color:var(--ink-soft)">' + s.meta.setup + '</p>';
+      h += '<div class="prog-rows">';
+      s.rows.forEach(function (r, i) {
+        if (r.kind === 'row') {
+          h += '<div class="row step' + (r.hot ? ' hot' : '') + '" data-i="' + i + '">' +
+               '<span class="lbl">' + r.label + '</span>' +
+               '<span class="lead"></span>' +
+               '<span class="val">' + r.value + '</span></div>';
+        } else {
+          h += '<div class="prog-note step" data-i="' + i + '">' + r.text + '</div>';
+        }
+      });
+      h += '</div></div><div class="prog-stage"><div class="mascot-slot"></div><div class="prog-cap" id="progcap"></div></div></div>';
+      return h;
+    }
+
+    var codeBlocks = s.blocks.filter(function (b) { return b.kind === 'code'; });
+    var isSplit = s.type === 'codigo' && codeBlocks.length;
+
+    if (isSplit) {
+      h += '<div class="split"><div class="left">';
+      s.blocks.forEach(function (b) {
+        if (b.kind === 'h2')   h += '<h2 style="margin:0">' + b.text + '</h2>';
+        if (b.kind === 'lede') h += '<p class="lede">' + b.text + '</p>';
+      });
+      h += '</div><div class="right">';
+      codeBlocks.forEach(function (b) {
+        h += '<pre><span class="cap">' + b.lang + '</span>' + highlight(b.code.join('\n'), b.lang) + '</pre>';
+      });
+      h += '</div></div>';
+      var qs = s.blocks.filter(function (b) { return b.kind === 'quote'; });
+      qs.forEach(function (b, i) {
+        h += '<blockquote class="step" data-i="' + i + '" style="margin-top:34px">' + b.text + '</blockquote>';
+      });
+      return h;
+    }
+
+    var stepIdx = 0;
+    var wrap = s.type === 'leva' ? 'leva' : '';
+    if (wrap) h += '<div class="leva">';
+
+    s.blocks.forEach(function (b) {
+      if (b.kind === 'h1') {
+        var soft = s.meta.soft ? '<span class="soft">' + s.meta.soft + '</span>' : '';
+        h += '<h1>' + soft + '<span class="hot">' + b.text + '</span></h1>';
+      }
+      else if (b.kind === 'h2')   h += '<h2>' + b.text + '</h2>';
+      else if (b.kind === 'lede') h += '<p class="lede" style="margin-bottom:26px">' + b.text + '</p>';
+      else if (b.kind === 'code') h += '<pre>' + highlight(b.code.join('\n'), b.lang) + '</pre>';
+      else if (b.kind === 'quote') h += '<blockquote class="step" data-i="' + (stepIdx++) + '" style="margin-top:30px">' + b.text + '</blockquote>';
+      else if (b.kind === 'step')  h += '<p class="lede step" data-i="' + (stepIdx++) + '" style="margin-top:28px">' + b.text + '</p>';
+    });
+
+    if (wrap) h += '</div>';
+    return h;
+  }
+
+  function stepCount(s) {
+    if (s.type === 'progressao') return s.rows.length;
+    return slideEl.querySelectorAll('.step').length;
+  }
+
+  /* ─────────── mascote ─────────── */
+
+  /* A transição não troca de desenho: a órbita aperta até virar um nó de tinta,
+     viaja, e abre de novo na densidade nova. Mesma fórmula o tempo todo. */
+
+  var curLoops = 2.2, curK = 1, rafId = null;
+  var TIGHT = 0.26;
+
+  function drawMascot() { tanglePath.setAttribute('d', scribble(curLoops, curK)); }
+
+  function easeIn(p)    { return p * p; }
+  function easeOut(p)   { return 1 - Math.pow(1 - p, 3); }
+  function easeInOut(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
+
+  function tween(toLoops, toK, dur, ease, done) {
+    if (rafId) cancelAnimationFrame(rafId);
+    var fromL = curLoops, fromK = curK, t0 = null;
+    function frame(now) {
+      if (t0 === null) t0 = now;
+      var p = Math.min(1, (now - t0) / dur), e = ease(p);
+      curLoops = fromL + (toLoops - fromL) * e;
+      curK = fromK + (toK - fromK) * e;
+      drawMascot();
+      if (p < 1) rafId = requestAnimationFrame(frame);
+      else { rafId = null; if (done) done(); }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function stationCenter(piece) {
+    var el = stations.filter(function (st) { return st.dataset.piece === piece; })[0] || stations[0];
+    var r = el.getBoundingClientRect();
+    var sr = document.getElementById('stage').getBoundingClientRect();
+    var scale = sr.width / 1280;
+    var cx = (r.left - sr.left) / scale + (el.offsetWidth - 76) / 2;
+    return { x: cx, y: 720 - 44 - 13 - 44 };
+  }
+
+  function targetOf(target) {
+    var slot = slideEl.querySelector('.mascot-slot');
+    if (target === 'stage' && slot) {
+      var r = slot.getBoundingClientRect();
+      var sr = document.getElementById('stage').getBoundingClientRect();
+      var k = sr.width / 1280;
+      return {
+        pos: { x: (r.left - sr.left) / k + slot.offsetWidth / 2,
+               y: (r.top - sr.top) / k + slot.offsetHeight / 2 },
+        scale: 2.1
+      };
+    }
+    return { pos: stationCenter(target), scale: 0.58 };
+  }
+
+  function placeMascot(target, loops, hot, instant) {
+    var t = targetOf(target);
+    mascot.classList.toggle('hot', !!hot);
+
+    function move() {
+      mascot.style.setProperty('--mx', t.pos.x + 'px');
+      mascot.style.setProperty('--my', t.pos.y + 'px');
+      mascot.style.setProperty('--ms', t.scale);
+    }
+
+    if (instant) { curLoops = loops; curK = 1; drawMascot(); move(); return; }
+
+    mascot.classList.add('balled');
+    tween(curLoops, TIGHT, 160, easeIn, function () {
+      mascot.classList.add('travelling');
+      move();
+      setTimeout(function () {
+        mascot.classList.remove('balled');
+        tween(loops, 1, 240, easeOut);
+        setTimeout(function () { mascot.classList.remove('travelling'); }, 60);
+      }, 380);
+    });
+  }
+
+  /* dentro do slide ele não viaja: só engrossa ou desembaraça */
+  function reshape(loops, hot) {
+    mascot.classList.toggle('hot', !!hot);
+    tween(loops, 1, 430, easeInOut);
+  }
+
+  /* ─────────── navegação ─────────── */
+
+  var lastPiece = null;
+
+  function render(instant) {
+    var s = SLIDES[si];
+    slideEl.innerHTML = slideHTML(s);
+    headL.textContent = s.piece ? '· ' + (s.piece === 'prompt' ? 1 : s.piece === 'memoria' ? 2 : s.piece === 'ferramentas' ? 3 : 4) + ' ·  ' + PIECE_LABEL[s.piece] : '';
+    pageNo.textContent = s.n;
+    stations.forEach(function (st) { st.classList.toggle('on', st.dataset.piece === s.piece); });
+
+    step = 0;
+    applySteps();
+
+    var pieceChanged = s.piece !== lastPiece;
+    lastPiece = s.piece;
+
+    var onStage = s.type === 'progressao';
+    var loops = onStage ? 1.3 : 2.2;
+    placeMascot(onStage ? 'stage' : (s.piece || 'prompt'), loops, false, !!instant);
+    mascot.classList.toggle('hidden', !s.piece && !onStage);
+  }
+
+  function applySteps() {
+    var s = SLIDES[si];
+    var els = slideEl.querySelectorAll('.step');
+    Array.prototype.forEach.call(els, function (el, i) { el.classList.toggle('in', i < step); });
+
+    if (s.type === 'progressao') {
+      var cap = document.getElementById('progcap');
+      var cur = null;
+      for (var i = 0; i < step && i < s.rows.length; i++) if (s.rows[i].kind === 'row') cur = s.rows[i];
+      if (cur) {
+        reshape(cur.loops, !!cur.hot);
+        if (cap) cap.innerHTML = cur.label + ' · <b>' + cur.value + '</b> tokens';
+      } else {
+        reshape(1.3, false);
+        if (cap) cap.textContent = '';
+      }
+    }
+  }
+
+  /* deep link: #slide.passo, para reabrir exatamente onde parou */
+  function syncHash() { history.replaceState(null, '', '#' + si + '.' + step); }
+
+  function readHash() {
+    var m = (location.hash || '').match(/^#(\d+)(?:\.(\d+))?$/);
+    if (!m) return false;
+    si = Math.min(SLIDES.length - 1, Math.max(0, parseInt(m[1], 10)));
+    render(true);
+    step = Math.min(stepCount(SLIDES[si]), parseInt(m[2] || '0', 10));
+    applySteps();
+    return true;
+  }
+
+  function next() {
+    var total = stepCount(SLIDES[si]);
+    if (step < total) { step++; applySteps(); syncHash(); return; }
+    if (si < SLIDES.length - 1) { si++; render(); syncHash(); }
+  }
+
+  function prev() {
+    if (step > 0) { step--; applySteps(); syncHash(); return; }
+    if (si > 0) { si--; render(); step = stepCount(SLIDES[si]); applySteps(); syncHash(); }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'r') { si = 0; step = 0; render(true); }
+    else if (e.key === 'p') { printAll(); }
+  });
+
+  document.getElementById('stage').addEventListener('click', next);
+
+  /* ─────────── escala ─────────── */
+
+  function fit() {
+    var stage = document.getElementById('stage');
+    var k = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.transform = 'scale(' + k + ')';
+  }
+  window.addEventListener('resize', fit);
+
+  /* ─────────── imprimir tudo ─────────── */
+
+  function printAll() {
+    var vp = document.getElementById('viewport');
+    var original = vp.innerHTML;
+    document.body.classList.add('printing');
+    var html = '';
+    SLIDES.forEach(function (s) {
+      si = SLIDES.indexOf(s);
+      var tmp = document.createElement('div');
+      tmp.innerHTML = slideHTML(s);
+      Array.prototype.forEach.call(tmp.querySelectorAll('.step'), function (el) { el.classList.add('in'); });
+      html += '<div id="stage" style="transform:none">' +
+              '<div id="head"><span>' + (s.piece ? PIECE_LABEL[s.piece] : '') + '</span><span>ensaio 04/10</span></div>' +
+              '<div id="slide">' + tmp.innerHTML + '</div>' +
+              '<div id="track"><div id="stations">' +
+                stations.map(function (st) { return '<span class="station' + (st.dataset.piece === s.piece ? ' on' : '') + '">' + st.textContent + '</span>'; }).join('') +
+              '</div><span>' + s.n + '</span></div></div>';
+    });
+    vp.innerHTML = html;
+    window.print();
+    setTimeout(function () {
+      document.body.classList.remove('printing');
+      vp.innerHTML = original;
+      location.reload();
+    }, 600);
+  }
+
+  /* ─────────── start ─────────── */
+
+  fit();
+  drawMascot();
+  if (!readHash()) render(true);
+  setTimeout(fit, 400);
+})();
+</script>
+</body>
+</html>
