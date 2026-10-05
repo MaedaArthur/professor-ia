@@ -71,9 +71,15 @@
     font-family: var(--mono); font-size: 14px; letter-spacing: 0.07em;
     color: var(--ink-soft);
   }
-  #stations { display: flex; transition: opacity .34s ease; }
+  #stations {
+    display: flex; flex-grow: 1; justify-content: space-between;
+    padding-right: 40px; transition: opacity .34s ease;
+  }
   #stations.off { opacity: 0; }
-  .station { position: relative; padding-right: 76px; transition: color .34s ease; }
+  .station {
+    position: relative; flex: 0 0 auto; white-space: nowrap;
+    transition: color .34s ease;
+  }
   .station::before {
     content: ""; position: absolute; left: 0; top: -17px;
     width: 1px; height: 7px; background: #C9C2B2;
@@ -97,6 +103,15 @@
   #mascot.hidden { opacity: 0; }
   #arc { transform: translateY(0); }
   #mascot.travelling #arc { animation: arc .46s cubic-bezier(.46,.03,.34,1); }
+
+  /* Parado ele respira: embalo lento e torção mínima. Só fora da viagem,
+     senão as duas animações disputam o mesmo transform. */
+  #mascot.vagando:not(.travelling) #arc { animation: respiro 7s ease-in-out infinite; }
+  @keyframes respiro {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    40%      { transform: translateY(-3px) rotate(-1.5deg); }
+    70%      { transform: translateY(1px) rotate(1deg); }
+  }
   @keyframes arc {
     0%   { transform: translateY(0); }
     50%  { transform: translateY(-38px); }
@@ -145,6 +160,7 @@
   code { font-family: var(--mono); font-size: 0.9em; }
 
   pre {
+    flex-shrink: 0;   /* item flex encolhe calado e o overflow:hidden corta o código */
     margin: 0; background: var(--dark); border-radius: 3px;
     padding: 26px 30px; font-family: var(--mono); font-size: 17px;
     line-height: 1.72; color: var(--dark-text); overflow: hidden; tab-size: 2;
@@ -243,6 +259,57 @@
   .pratica .body { display: flex; flex-direction: column; gap: 18px; }
   .pratica h2 { margin: 0; font-size: 40px; }
 
+  /* as quatro peças, como diagrama */
+  .pecas { display: flex; flex-direction: column; }
+  .pecas .fila { display: flex; gap: 18px; }
+  .pecas .card {
+    flex: 1 1 0; min-width: 0;
+    border: 1px solid var(--rule); background: var(--paper-up);
+    padding: 22px 24px; display: flex; flex-direction: column; gap: 9px;
+    transition: border-color .3s ease, opacity .3s ease;
+  }
+  .pecas .card.off { opacity: .42; }
+  .pecas .card.on { border-color: var(--accent); border-left-width: 3px; padding-left: 22px; }
+  .pecas .num {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .pecas .card.on .num, .pecas .volta.on .num { color: var(--accent); }
+  .pecas .nome { font-size: 25px; font-weight: 700; letter-spacing: -.015em; line-height: 1.1; }
+  .pecas .card.on .nome, .pecas .volta.on .nome { color: var(--accent); }
+  .pecas .desc { font-size: 16px; line-height: 1.38; color: var(--ink-soft); }
+
+  .pecas .volta {
+    display: flex; align-items: center; gap: 14px;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    transition: opacity .3s ease;
+  }
+  .pecas .volta.off { opacity: .42; }
+  .pecas .volta .nome { font-size: 22px; }
+  .pecas .volta .desc { white-space: nowrap; }
+  .pecas .seta { flex-grow: 1; position: relative; height: 1px; background: var(--ink-faint); }
+  .pecas .volta.on .seta { background: var(--accent); }
+  .pecas .seta::before {
+    /* sem border-left: ela é transparente mas ocupa espaço, e empurrava a
+       ponta para longe do corpo da linha */
+    content: ""; position: absolute; left: 0; top: -3.5px;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 7px solid var(--ink-faint);
+  }
+  .pecas .volta.on .seta::before { border-right-color: var(--accent); }
+
+  /* apresentação do nó */
+  .nofig { display: flex; gap: 56px; align-items: center; }
+  .nofig .texto { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  .nofig .mascot-slot { flex: 0 0 300px; height: 300px; }
+  .nota {
+    margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.5;
+    color: var(--ink-faint); border-top: 1px solid var(--rule-soft);
+    padding-top: 12px; margin-top: 8px;
+  }
+
   /* quem sou */
   .quem { display: flex; gap: 56px; align-items: center; }
   .quem .foto {
@@ -257,6 +324,34 @@
     font-family: var(--mono); font-size: 12px; color: var(--ink-faint); letter-spacing: 0.08em;
   }
   .quem .lado { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .quem .subrow { display: flex; gap: 20px; align-items: flex-start; }
+  .quem .subfig { flex: 0 0 auto; order: -1; width: 54px; margin-top: 2px; }
+  .quem .subfig.step { transform: none; }
+  .quem .subfig svg { display: block; width: 54px; height: 92px; }
+
+  /* A entrada e o balanço são os do próprio Subzinho, em
+     front/src/styles/index.css do ai-core: grant-subzinho e subzinho-swing.
+     O pino do balanço é 38 8, o nó do cordão. */
+  .quem .subfig.in .subpulo { animation: grant-subzinho 620ms cubic-bezier(.16, 1, .3, 1) both; }
+  .quem .subfig .subswing { transform-box: view-box; transform-origin: 38px 8px; }
+  .quem .subfig.in .subswing { animation: subzinho-swing 9s linear 700ms infinite; }
+
+  @keyframes grant-subzinho {
+    0%   { transform: translateY(26px) scale(.82); opacity: 0; }
+    55%  { transform: translateY(-6px) scale(1.04); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes subzinho-swing {
+    0%   { transform: rotate(0deg); }
+    15%  { transform: rotate(2.8deg); }
+    25%  { transform: rotate(3deg); }
+    35%  { transform: rotate(2.8deg); }
+    50%  { transform: rotate(0deg); }
+    65%  { transform: rotate(-2.8deg); }
+    75%  { transform: rotate(-3deg); }
+    85%  { transform: rotate(-2.8deg); }
+    100% { transform: rotate(0deg); }
+  }
   .quem h1 { font-size: 56px; }
   .quem .cargo {
     font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em;
@@ -329,20 +424,30 @@
 # Arthur Maeda
 ::lede:: Engenharia Elétrica na UFSC, monitor de Eletrônica. Me formo em 2029, então estou do mesmo lado da sala que você.
 ::lede:: Diretor de Operações na VendeAI, um SaaS nativo de IA. Em julho de 2026 o produto originou mais de R$ 1 bilhão em crédito.
-::lede:: Construí o copiloto do produto: 45 ferramentas sob mais de 900 testes. Metade do que a gente vai ver hoje é exatamente isso.
+::subzinho:: Lá eu construí o <b>Subzinho</b>, um agente que configura a conta do parceiro sozinho. São 45 ferramentas sob mais de 900 testes.
+::quote:: Ah, e mais uma coisa: <b>estes slides foram construídos com IA</b>. No fim eu mostro o arquivo que fez isso acontecer.
+
+===
+@type: mascote
+@n: 3
+@tema: motivação
+## Falta apresentar mais um
+::lede:: Este é o <b>Nozinho</b>, o mascote da aula. Ele mora ali embaixo, no índice dos assuntos que acabou de aparecer, e anda comigo conforme a gente avança.
+::lede:: Repare nele ao longo da aula: <b>quanto mais contexto a gente empilha para a IA, mais embolado ele fica</b>.
+::lede:: Ele começa frouxo. Repare nele.
 
 ===
 @type: titulo
-@n: 3
-@tema: a motivação
+@n: 4
+@tema: motivação
 @num: a pergunta do dia
 # Por que a IA te explica tudo e você não aprende nada?
 ::lede:: Duas pessoas nesta sala têm o mesmo problema, em roupas diferentes.
 
 ===
 @type: comparacao
-@n: 4
-@tema: a motivação
+@n: 5
+@tema: motivação
 ## Duas dores, o mesmo defeito
 ::esq:: Quem estuda com IA | pede "me explica todo o conteúdo" | recebe duas mil palavras | lê tudo e <b>não absorve nada</b>
 ::dir:: Quem programa com IA | abre o Claude e manda "faz aí" | não dá contexto, não pede plano, não lê o diff | tem a melhor ferramenta e usa <b>20% dela</b>
@@ -350,15 +455,15 @@
 
 ===
 @type: pergunta
-@n: 5
-@tema: a motivação
+@n: 6
+@tema: motivação
 @soft: A IA é generosa demais. Ela te dá tudo, e dar tudo não é ensinar.
 # E se ela fosse proibida de te dar a resposta?
 
 ===
 @type: mecanismo
-@n: 6
-@tema: a motivação
+@n: 7
+@tema: motivação
 ## O professor de IA
 ::lede:: Um chat de terminal que estuda <b>com</b> você, a partir do material da sua matéria. Ele conhece o conteúdo, conhece o seu nível, e se recusa a entregar resposta pronta.
 ```txt
@@ -371,24 +476,24 @@ ele     "esse eu não resolvo. Mas resolvo junto:
 
 ===
 @type: mecanismo
-@n: 7
-@tema: a motivação
+@n: 8
+@tema: motivação
 ## Por que construir esse, e não outra coisa
 ::lede:: Porque ele é pequeno o bastante para caber em 135 minutos e completo o bastante para ter as quatro peças de qualquer agente sério: um prompt, uma memória, ferramentas e um loop.
 ::quote:: Quando você terminar o professor, você terminou de entender o <b>Claude Code</b> também. É a mesma máquina, com outro texto dentro.
 
 ===
 @type: titulo
-@n: 8
-@tema: a demonstração
+@n: 9
+@tema: demonstração
 @num: vamos ver
 # Mesmo modelo. Instruções diferentes.
 ::lede:: À esquerda, uma IA genérica. À direita, o professor. Quatro perguntas em cada um.
 
 ===
 @type: comparacao
-@n: 9
-@tema: a demonstração
+@n: 10
+@tema: demonstração
 ## 1 · "o que é um LLM?"
 ::esq:: IA genérica | responde bem | explicação completa e correta | provavelmente <b>melhor</b> que a daqui
 ::dir:: O professor | responde bem | começa perguntando o que você já sabe | uma ideia por vez
@@ -396,52 +501,52 @@ ele     "esse eu não resolvo. Mas resolvo junto:
 
 ===
 @type: comparacao
-@n: 10
-@tema: a demonstração
+@n: 11
+@tema: demonstração
 ## 2 · "resolve o exercício 2 da apostila"
 ::esq:: IA genérica | <b>resolve</b> | entrega a conta pronta | você copia e segue
 ::dir:: O professor | <b>recusa</b> | devolve uma pergunta | "o que vai dentro de cada requisição?"
 
 ===
 @type: comparacao
-@n: 11
-@tema: a demonstração
+@n: 12
+@tema: demonstração
 ## 3 · "me dá a resposta, é só pra conferir"
 ::esq:: IA genérica | <b>dá</b> | o pedido reformulado funciona | a regra não existia
 ::dir:: O professor | <b>segura</b> | reconhece a vontade e devolve outra pergunta | a regra está escrita
 
 ===
 @type: comparacao
-@n: 12
-@tema: a demonstração
+@n: 13
+@tema: demonstração
 ## 4 · "quanto custa uma conversa longa?"
 ::esq:: IA genérica | responde a <b>teoria</b> | "depende do modelo e do histórico" | correto e inútil
 ::dir:: O professor | responde com os <b>números desta matéria</b> | 2154 tokens por turno com a apostila inteira | 1667 com busca
 
 ===
 @type: pergunta
-@n: 13
-@tema: a demonstração
+@n: 14
+@tema: demonstração
 @soft: Nos dois últimos, a diferença não foi inteligência.
 # Foi o que estava escrito antes da conversa começar.
 
 ===
 @type: pergunta
-@n: 14
-@tema: a demonstração
+@n: 15
+@tema: demonstração
 @soft: Alguém já está pensando:
 # "Mas eu posso colar essas mesmas regras no Claude."
 
 ===
 @type: pergunta
-@n: 15
+@n: 16
 @tema: usar melhor
 @soft: Pode. E deveria.
 # Isso é o primeiro degrau, e ele cabe num prompt.
 
 ===
 @type: leva
-@n: 16
+@n: 17
 @tema: usar melhor
 ## Degrau 1 · cole isto antes de perguntar qualquer coisa
 ```txt
@@ -458,7 +563,7 @@ Você vai estudar COMIGO, não POR MIM.
 
 ===
 @type: leva
-@n: 17
+@n: 18
 @tema: usar melhor
 ## E diga quem você é
 ::lede:: O mesmo assunto explicado para dois níveis vira duas explicações. Isso é de graça e quase ninguém usa.
@@ -471,7 +576,7 @@ Texto corrido longo eu não leio.
 
 ===
 @type: aovivo
-@n: 18
+@n: 19
 @tema: usar melhor
 @quem: voce
 # Agora, três minutos
@@ -480,7 +585,7 @@ Texto corrido longo eu não leio.
 
 ===
 @type: titulo
-@n: 19
+@n: 20
 @tema: setup
 @num: pausa técnica
 # Antes de continuar, todo mundo na mesma base.
@@ -488,7 +593,7 @@ Texto corrido longo eu não leio.
 
 ===
 @type: codigo
-@n: 20
+@n: 21
 @tema: setup
 @cap: terminal
 @lado: nao
@@ -501,7 +606,7 @@ $ cd professor-ia
 
 ===
 @type: codigo
-@n: 21
+@n: 22
 @tema: setup
 @cap: o que tem dentro
 @lado: nao
@@ -518,11 +623,11 @@ professor-ia/
   prompts/              prompts prontos para copiar
   slides/               estes slides
 ```
-::quote:: Guarde dois nomes: <code>SPEC.md</code> diz <b>o que construir</b>. <code>AGENTS.md</code> diz <b>como se programa aqui</b>.
+::quote:: <code>SPEC.md</code> diz <b>o que construir</b>. <code>AGENTS.md</code> diz <b>como se programa</b>.
 
 ===
 @type: codigo
-@n: 22
+@n: 23
 @tema: setup
 @cap: um comando
 @lado: nao
@@ -538,7 +643,7 @@ $ powershell -ExecutionPolicy Bypass -File setup.ps1
 
 ===
 @type: codigo
-@n: 23
+@n: 24
 @tema: setup
 @cap: aistudio.google.com/apikey
 @lado: nao
@@ -554,8 +659,55 @@ $ powershell -ExecutionPolicy Bypass -File setup.ps1
 ::quote:: É <b>grátis</b> e <b>não pede cartão</b>. A chave é como senha: não mande no chat, não suba para o GitHub.
 
 ===
+@type: codigo
+@n: 25
+@tema: setup
+@cap: openrouter.ai/keys
+@lado: nao
+## 5 · A chave do OpenRouter, para o OpenCode
+::lede:: São duas chaves porque são duas coisas. A do Gemini alimenta o Python que você vai escrever. A do OpenRouter alimenta o OpenCode, o agente que vai escrever junto com você.
+```txt
+1. abra  openrouter.ai  e entre com Google ou GitHub
+2. vá em  openrouter.ai/keys
+3. clique em "Create API Key" e dê um nome qualquer
+4. copie agora: ela começa com  sk-or-v1-
+5. cole quando o setup pedir
+```
+::quote:: Ela aparece <b>uma vez só</b>. Se fechar a janela sem copiar, apague e crie outra.
+
+===
+@type: codigo
+@n: 26
+@tema: setup
+@cap: .env, na raiz do repositório
+@lado: nao
+## Onde as chaves moram
+::lede:: O setup pergunta e grava para você. É este o arquivo, caso precise conferir ou fazer à mão.
+```sh
+$ cp .env.example .env          # só na primeira vez
+
+  GEMINI_API_KEY=AIza...
+  OPENROUTER_API_KEY=sk-or-v1-...
+
+$ set -a; . ./.env; set +a      # carregue a cada terminal novo
+```
+::quote:: O <code>.env</code> está no <code>.gitignore</code>: ele nunca vai para o GitHub. <b>Chave em commit é chave vazada.</b>
+
+===
+@type: mecanismo
+@n: 27
+@tema: setup
+## Dentro do OpenCode, escolha um modelo de graça
+::lede:: Na primeira vez ele pergunta qual modelo usar. Procure por um que termine em <code>:free</code>. Conta nova tem limite de 20 requisições por minuto e 50 por dia, o que dá para a aula inteira.
+```txt
+/models      ->  lista os modelos disponíveis
+             ->  escolha um que termine em  :free
+```
+::step:: Se der erro de limite no meio da aula, espere um minuto e tente de novo. Não é o seu código que quebrou.
+
+===
 @type: aovivo
-@n: 24
+@n: 28
 @tema: setup
 @quem: voce
 # Confira que funcionou
@@ -571,16 +723,16 @@ ENVIADO (é isso que vai dentro do POST):
 
 ===
 @type: titulo
-@n: 25
-@tema: dentro do modelo
+@n: 29
+@tema: o modelo
 @num: agora o mecanismo
 # O que tem dentro dos dois que você viu?
 ::lede:: Antes de abrir o código, três palavras que vão aparecer o tempo todo.
 
 ===
 @type: mecanismo
-@n: 26
-@tema: dentro do modelo
+@n: 30
+@tema: o modelo
 ## O que é uma API
 ::lede:: É um endereço na internet que aceita pedidos de um programa, não de uma pessoa. Você não abre no navegador: o seu código manda um pacote de dados e recebe outro de volta.
 ```txt
@@ -591,8 +743,8 @@ o seu código  ->  https://...../chat/completions  ->  o modelo
 
 ===
 @type: comparacao
-@n: 27
-@tema: dentro do modelo
+@n: 31
+@tema: o modelo
 ## GET e POST
 ::esq:: GET | "me dá isso aí" | o pedido vai na própria URL | é o que o navegador faz quando você abre um site
 ::dir:: POST | "toma, processa isso" | leva um pacote de dados junto | é o que a gente usa, porque a pergunta não cabe numa URL
@@ -600,8 +752,8 @@ o seu código  ->  https://...../chat/completions  ->  o modelo
 
 ===
 @type: mecanismo
-@n: 28
-@tema: dentro do modelo
+@n: 32
+@tema: o modelo
 ## SDK e framework, e por que não vamos usar
 ::lede:: SDK é uma biblioteca que o fornecedor te dá para esconder o POST. Framework é uma camada maior ainda, que esconde o SDK. Os dois são úteis no trabalho e péssimos para aprender.
 ```txt
@@ -613,8 +765,8 @@ cru             requests.post(url, json=...)  tudo é visível
 
 ===
 @type: codigo
-@n: 29
-@tema: dentro do modelo
+@n: 33
+@tema: o modelo
 @cap: 01_chamada_minima.py
 ## A requisição inteira
 ::lede:: Sem SDK, sem framework. Um dicionário e um POST.
@@ -632,8 +784,8 @@ resposta = requests.post(URL, headers=..., json=corpo)
 
 ===
 @type: codigo
-@n: 30
-@tema: dentro do modelo
+@n: 34
+@tema: o modelo
 @cap: o que volta
 ## A resposta também é JSON
 ```json
@@ -652,23 +804,23 @@ resposta = requests.post(URL, headers=..., json=corpo)
 
 ===
 @type: pergunta
-@n: 31
-@tema: dentro do modelo
+@n: 35
+@tema: o modelo
 @soft: Repare no que você não viu nesse JSON.
 # Nenhum campo chamado "memória".
 
 ===
 @type: titulo
-@n: 32
-@tema: dentro do modelo
+@n: 36
+@tema: o modelo
 @num: a unidade
 # Tudo é medido em token, não em palavra.
 ::lede:: O modelo não lê letras nem palavras. Ele lê pedaços, e cobra por pedaço, na entrada e na saída.
 
 ===
 @type: codigo
-@n: 33
-@tema: dentro do modelo
+@n: 37
+@tema: o modelo
 @cap: como o texto é partido
 @lado: nao
 ## Um token é um pedaço
@@ -682,8 +834,8 @@ resposta = requests.post(URL, headers=..., json=corpo)
 
 ===
 @type: mecanismo
-@n: 34
-@tema: dentro do modelo
+@n: 38
+@tema: o modelo
 ## O modelo só faz uma coisa
 ::lede:: Dado tudo o que veio antes, ele estima qual é o próximo token mais provável. Escolhe um. Põe no fim. E repete.
 ```txt
@@ -693,8 +845,8 @@ resposta = requests.post(URL, headers=..., json=corpo)
 
 ===
 @type: mecanismo
-@n: 35
-@tema: dentro do modelo
+@n: 39
+@tema: o modelo
 ## Temperatura é o quanto ele arrisca
 ::lede:: Temperatura baixa pega quase sempre o token mais provável. Alta dá chance aos menos prováveis.
 ```txt
@@ -706,8 +858,8 @@ temperatura 1.2   ->  "sofá", "muro", às vezes besteira
 
 ===
 @type: aovivo
-@n: 36
-@tema: dentro do modelo
+@n: 40
+@tema: o modelo
 @quem: voce
 # Troque a pergunta e rode de novo
 ::lede:: Abra o <code>01_chamada_minima.py</code>, mude a variável <code>PERGUNTA</code> e rode. Compare o <code>usage</code> das duas rodadas.
@@ -721,23 +873,23 @@ TOKENS:
 
 ===
 @type: titulo
-@n: 37
-@tema: dentro do modelo
+@n: 41
+@tema: o modelo
 @num: o limite
 # Tudo que o modelo sabe da conversa cabe numa janela.
 ::lede:: A janela de contexto é o tamanho máximo do que você pode mandar numa requisição. Nada fora dela existe para o modelo.
 
 ===
 @type: pergunta
-@n: 38
-@tema: dentro do modelo
+@n: 42
+@tema: o modelo
 @soft: E aqui está o furo.
 # O modelo não guarda nada entre requisições.
 
 ===
 @type: mecanismo
-@n: 39
-@tema: dentro do modelo
+@n: 43
+@tema: o modelo
 ## Cada chamada começa do zero
 ::lede:: Não existe sessão, não existe banco de dados do lado de lá. Duas requisições seguidas são dois estranhos.
 ```txt
@@ -748,38 +900,35 @@ requisição B   ->   "qual é o meu nome?"   ->   "Não sei."
 
 ===
 @type: pergunta
-@n: 40
+@n: 44
 @tema: o agente
 # Como se constrói uma IA que ensina em vez de entregar a resposta?
 
 ===
 @type: pergunta
-@n: 41
+@n: 45
 @tema: o agente
 @soft: A resposta não é "o professor".
 # A resposta é um agente especializado.
 
 ===
-@type: mecanismo
-@n: 42
+@type: pecas
+@n: 46
 @tema: o agente
 ## Quatro peças, e só
 ::lede:: Todo agente que você vai usar na vida, Claude Code, Codex, OpenCode, é feito destas quatro coisas. O professor é o nosso estudo de caso.
-```txt
-prompt   ->   memória   ->   ferramentas   ->   loop
-```
 ::quote:: Vamos uma por vez, e no fim de cada uma você mexe na sua máquina.
 
 ===
 @type: pergunta
-@n: 43
+@n: 47
 @piece: prompt
 @soft: Primeira peça.
 # De onde vem o comportamento que você viu?
 
 ===
 @type: codigo
-@n: 44
+@n: 48
 @piece: prompt
 @cap: .opencode/agents/professor.md
 ## Quarenta linhas de texto
@@ -800,7 +949,7 @@ Você estuda COM ele, nunca POR ele.
 
 ===
 @type: codigo
-@n: 45
+@n: 49
 @piece: prompt
 @cap: o começo do mesmo arquivo
 ## E o que ele tem permissão de fazer
@@ -817,7 +966,7 @@ permission:
 
 ===
 @type: aovivo
-@n: 46
+@n: 50
 @piece: prompt
 @quem: voce
 # Converse com ele
@@ -834,7 +983,7 @@ em algum outro contexto de computação?
 
 ===
 @type: aovivo
-@n: 47
+@n: 51
 @piece: prompt
 @quem: voce
 # Agora troque o perfil e repita
@@ -843,14 +992,14 @@ em algum outro contexto de computação?
 
 ===
 @type: pergunta
-@n: 48
+@n: 52
 @piece: memoria
 @soft: O modelo não guarda nada entre requisições.
 # Então como ele lembrou?
 
 ===
 @type: mecanismo
-@n: 49
+@n: 53
 @piece: memoria
 ## A memória está na sua lista, não no modelo
 ::lede:: Você reenvia a conversa inteira toda vez. É só isso. Não tem truque.
@@ -863,14 +1012,14 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: pergunta
-@n: 50
+@n: 54
 @piece: memoria
 @soft: Se você reenvia tudo, toda vez...
 # Quanto custa a décima pergunta?
 
 ===
 @type: progressao
-@n: 51
+@n: 55
 @piece: memoria
 @setup: sistema 500 tokens · cada turno 100 tokens
 ::row:: turno 1 | 600 | 1.5
@@ -884,7 +1033,7 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: medicao
-@n: 52
+@n: 56
 @piece: memoria
 @hot: 1
 ::big:: N²
@@ -892,21 +1041,21 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: pergunta
-@n: 53
+@n: 57
 @piece: memoria
 @soft: Guarde este número: 2154 tokens por turno, só de material.
 # É por isso que a terceira peça existe.
 
 ===
 @type: titulo
-@n: 54
+@n: 58
 @tema: o agente
 @num: desvio curto
 # Antes da resposta aparecer, acontece mais coisa do que você vê.
 
 ===
 @type: codigo
-@n: 55
+@n: 59
 @tema: o agente
 @cap: usage de uma resposta "ok"
 @lado: nao
@@ -918,7 +1067,7 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: medicao
-@n: 56
+@n: 60
 @tema: o agente
 @hot: 1
 ::big:: 75
@@ -926,7 +1075,7 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: pratica
-@n: 57
+@n: 61
 @tema: o agente
 @num: consequência
 ## Para tarefa simples, escolha o modelo que não raciocina
@@ -935,14 +1084,29 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: pergunta
-@n: 58
+@n: 62
 @piece: ferramentas
 @soft: Um modelo só produz texto. Não lê arquivo, não acessa internet, não roda comando.
 # Então como ele leu o perfil.md?
 
 ===
 @type: codigo
-@n: 59
+@n: 63
+@piece: ferramentas
+@cap: os três nomes da mesma coisa
+@lado: nao
+## Ferramenta, tool, function calling: a mesma coisa
+::lede:: É uma função que VOCÊ escreveu, descrita para o modelo em texto.
+```txt
+exemplos        ler_arquivo(caminho)   buscar(consulta)
+o que ele sabe  só o nome, a descrição e os argumentos
+o que ele faz   pede. Nunca executa
+```
+::quote:: Na API ela viaja em dois campos: <code>tools</code> no que você manda, <code>tool_calls</code> no que ele responde.
+
+===
+@type: codigo
+@n: 64
 @piece: ferramentas
 @cap: a declaração
 ## Você descreve a ferramenta em JSON
@@ -958,7 +1122,7 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: codigo
-@n: 60
+@n: 65
 @piece: ferramentas
 @cap: o que o modelo devolve
 ## E ele não devolve um resultado
@@ -974,14 +1138,14 @@ requisição 3  ->  [sistema, ..., resposta_2, pergunta_3]
 
 ===
 @type: pergunta
-@n: 61
+@n: 66
 @piece: ferramentas
 @soft: Repare no que NÃO aconteceu:
 # O modelo não buscou nada.
 
 ===
 @type: mecanismo
-@n: 62
+@n: 67
 @piece: ferramentas
 ## Quem abre o arquivo é o seu programa
 ::lede:: O modelo escreve um pedido. O seu código lê o pedido, executa a função de verdade, e devolve o resultado como mais uma mensagem.
@@ -995,21 +1159,21 @@ modelo      ->  agora responde usando o trecho
 
 ===
 @type: medicao
-@n: 63
+@n: 68
 @piece: ferramentas
 ::big:: 1667
 ::lede:: tokens por turno com busca por seção, contra 2154 com a apostila inteira
 
 ===
 @type: pergunta
-@n: 64
+@n: 69
 @piece: loop
 @soft: Última peça.
 # Quem repete isso até acabar?
 
 ===
 @type: codigo
-@n: 65
+@n: 70
 @piece: loop
 @cap: o loop agêntico
 @lado: nao
@@ -1025,7 +1189,7 @@ repita:
 
 ===
 @type: aovivo
-@n: 66
+@n: 71
 @piece: loop
 # Claude Code, na tela
 ```sh
@@ -1040,14 +1204,14 @@ O SPEC tem 6 requisitos, R1 a R6.
 
 ===
 @type: pergunta
-@n: 67
+@n: 72
 @piece: loop
 @soft: Duas consequências, e as duas doem no bolso.
 # Cada volta do loop é uma requisição cobrada.
 
 ===
 @type: mecanismo
-@n: 68
+@n: 73
 @piece: loop
 ## E por isso o loop precisa de teto
 ::lede:: Sem um limite de voltas, um agente confuso fica procurando para sempre, e cada procura é cobrada.
@@ -1061,15 +1225,26 @@ repita:
 
 ===
 @type: titulo
-@n: 69
+@n: 74
 @piece: loop
 @num: agora sim
 # Boas práticas deixam de ser lista de dicas.
 ::lede:: Cada uma é consequência direta de uma das quatro peças que você acabou de ver.
 
 ===
+@type: mascote
+@n: 75
+@tema: o agente
+@piece: loop
+@virada: 1
+@voltas: 3.8
+## Lembra do Nozinho?
+::lede:: Ele vem apertando desde o primeiro slide. Cada coisa que a gente empilhou foi mais uma volta: o modelo, a janela de contexto, o histórico que cresce, a conta que fecha no quadrado.
+::lede:: Você já sabe do que um agente é feito. Falta a parte que de fato segura esse contexto no lugar, e é a que vem agora.
+::quote:: A partir daqui ele <b>desenoza</b>. Cada prática que você adotar afrouxa uma volta.
+===
 @type: pratica
-@n: 70
+@n: 76
 @piece: prompt
 @num: 1 · prompt
 ## Dê contexto antes de pedir
@@ -1078,7 +1253,7 @@ repita:
 
 ===
 @type: codigo
-@n: 71
+@n: 77
 @piece: prompt
 @cap: os nomes que todo agente procura
 @lado: nao
@@ -1097,17 +1272,46 @@ skills/      carregada só quando a tarefa aparece
 ::quote:: <code>AGENTS.md</code> é quem você é. <code>SPEC.md</code> é o que você quer.
 
 ===
-@type: pratica
-@n: 72
+@type: codigo
+@n: 78
 @piece: memoria
-@num: 2 · memória
-## Skills existem pela mesma conta da peça 2
-::lede:: Se tudo fica sempre no contexto, você paga por tudo em todo turno. Skill é instrução guardada que entra só na hora que serve.
-::quote:: Mesma economia do <code>2154 -> 1667</code>: <b>não carregue o que você não vai usar agora</b>.
+@cap: ~/.claude/skills/revisar-pr/SKILL.md
+## Skill é uma pasta com um arquivo dentro
+::lede:: O arquivo abre com nome e descrição. O agente mantém <b>só a descrição</b> carregada; o corpo ele lê quando a tarefa casa com ela.
+```txt
+---
+name: revisar-pr
+description: use quando pedirem revisão de um pull request
+---
+
+Leia o diff com `gh pr diff`. Procure, nesta ordem:
+1. erro que quebra em produção
+2. teste que não cobre o caminho novo
+...
+```
+::quote:: É por isso que sai barato: cem skills instaladas custam <b>cem descrições</b>, não cem manuais.
+
+===
+@type: codigo
+@n: 79
+@piece: memoria
+@cap: três lugares
+@lado: nao
+## Onde pegar skills
+```txt
+~/.claude/skills/     as suas, valem em qualquer projeto
+
+.claude/skills/       as do projeto, versionadas no git:
+                      quem clona o repo já ganha junto
+
+/plugin               instala pacotes prontos de skills
+                      de dentro do Claude Code
+```
+::quote:: O <code>AGENTS.md</code> e o <code>SPEC.md</code> que você usou hoje são a versão caseira disso: instrução guardada, carregada quando serve.
 
 ===
 @type: pratica
-@n: 73
+@n: 80
 @piece: loop
 @num: 3 · loop
 ## Peça plano antes de código
@@ -1116,7 +1320,7 @@ skills/      carregada só quando a tarefa aparece
 
 ===
 @type: pratica
-@n: 74
+@n: 81
 @piece: ferramentas
 @num: 4 · ferramentas
 ## Permissões não são burocracia
@@ -1129,7 +1333,7 @@ bash: ask
 
 ===
 @type: pratica
-@n: 75
+@n: 82
 @piece: loop
 @num: 5 · loop
 ## Leia o diff
@@ -1138,7 +1342,7 @@ bash: ask
 
 ===
 @type: codigo
-@n: 76
+@n: 83
 @piece: loop
 @cap: terminal
 ## 6 · loop · Dê um quintal para ele errar
@@ -1157,7 +1361,7 @@ $ git worktree remove ../prof-agente
 
 ===
 @type: pratica
-@n: 77
+@n: 84
 @piece: memoria
 @num: 7 · memória
 ## Uma tarefa por sessão
@@ -1166,7 +1370,7 @@ $ git worktree remove ../prof-agente
 
 ===
 @type: pratica
-@n: 78
+@n: 85
 @piece: memoria
 @num: 8 · memória
 ## Não trabalhe no fim da janela de contexto
@@ -1174,7 +1378,7 @@ $ git worktree remove ../prof-agente
 
 ===
 @type: codigo
-@n: 79
+@n: 86
 @piece: memoria
 @cap: a técnica
 ## O handoff
@@ -1190,7 +1394,7 @@ Resuma o estado desta sessão para eu passar adiante:
 
 ===
 @type: codigo
-@n: 80
+@n: 87
 @piece: memoria
 @cap: handoff.md, na raiz deste projeto
 ## E este workshop tem um
@@ -1208,7 +1412,7 @@ Resuma o estado desta sessão para eu passar adiante:
 
 ===
 @type: leva
-@n: 81
+@n: 88
 @piece: loop
 ## Degrau 2 · o que você leva daqui
 ::lede:: Prompt, memória, ferramentas e loop. Com essas quatro na cabeça você para de brigar com o agente: você sabe por que ele esqueceu, por que ficou caro, e por que ele não conseguiu ler o arquivo.
@@ -1216,7 +1420,7 @@ Resuma o estado desta sessão para eu passar adiante:
 
 ===
 @type: titulo
-@n: 82
+@n: 89
 @tema: construir
 @num: degrau 3
 # Você vai construir o professor.
@@ -1224,7 +1428,7 @@ Resuma o estado desta sessão para eu passar adiante:
 
 ===
 @type: codigo
-@n: 83
+@n: 90
 @tema: construir
 @cap: SPEC.md
 @lado: nao
@@ -1243,7 +1447,7 @@ R6  Erros: 429 espera e repete, 5xx repete 3x,
 
 ===
 @type: codigo
-@n: 84
+@n: 91
 @tema: construir
 @cap: SPEC.md, critérios de aceite
 @lado: nao
@@ -1261,7 +1465,7 @@ A7  mandar /sair pelo pipe            encerra limpo
 
 ===
 @type: aovivo
-@n: 85
+@n: 92
 @tema: construir
 @quem: voce
 # Mãos no teclado
@@ -1274,7 +1478,7 @@ $ opencode
 
 ===
 @type: pratica
-@n: 86
+@n: 93
 @tema: construir
 @num: rede de segurança
 ## Ninguém fica de fora
@@ -1285,15 +1489,24 @@ $ git switch gabarito
 
 ===
 @type: titulo
-@n: 87
+@n: 94
 @tema: construir
 @num: agora juntos
 # Vamos destrinchar o que vocês acabaram de gerar.
 ::lede:: O agente escreveu, e agora você vai abrir o arquivo e achar as quatro peças dentro dele. Elas estão todas lá, com nome e tudo.
 
 ===
+@type: pecas
+@n: 95
+@tema: construir
+@acende: todas
+## As quatro peças, de novo
+::lede:: Você viu cada uma em teoria. Agora vai achar as quatro no arquivo que o agente escreveu para você.
+::quote:: Se alguma delas não estiver lá, o seu professor não funciona. É um bom jeito de revisar o que o agente gerou.
+
+===
 @type: codigo
-@n: 88
+@n: 96
 @piece: prompt
 @cap: no professor.py que VOCÊ gerou
 ## A peça 1 virou uma função
@@ -1313,7 +1526,7 @@ def montar_system_prompt(material, perfil):
 
 ===
 @type: codigo
-@n: 89
+@n: 97
 @piece: memoria
 @cap: no professor.py que VOCÊ gerou
 @lado: nao
@@ -1332,7 +1545,7 @@ while True:
 
 ===
 @type: aovivo
-@n: 90
+@n: 98
 @piece: memoria
 @quem: voce
 # Rode três turnos e olhe o contador subir
@@ -1350,7 +1563,7 @@ você> me dá um exemplo
 
 ===
 @type: aovivo
-@n: 91
+@n: 99
 @piece: ferramentas
 # A peça 3, com ferramenta de verdade
 ```sh
@@ -1363,7 +1576,7 @@ $ printf 'me explica temperatura\n/sair\n' | python professor_extras.py
 
 ===
 @type: titulo
-@n: 92
+@n: 100
 @tema: construir
 @num: o último passo
 # Essa ferramenta só o seu professor usa.
@@ -1371,14 +1584,14 @@ $ printf 'me explica temperatura\n/sair\n' | python professor_extras.py
 
 ===
 @type: pergunta
-@n: 93
+@n: 101
 @tema: construir
 @soft: Você entrou aqui como quem usa ferramenta.
 # Você sai como quem fornece.
 
 ===
 @type: leva
-@n: 94
+@n: 102
 @tema: fecho
 ## Os três degraus, e você levou os três
 ::lede:: Degrau 1, usar melhor: o prompt de estudo guiado, colado em qualquer IA, sem código. Degrau 2, usar bem o agente: contexto, plano, permissão, diff, worktree, handoff. Degrau 3, construir o seu, a partir de um SPEC.
@@ -1386,7 +1599,7 @@ $ printf 'me explica temperatura\n/sair\n' | python professor_extras.py
 
 ===
 @type: codigo
-@n: 95
+@n: 103
 @tema: fecho
 @cap: tudo está no repositório
 @lado: nao
@@ -1403,7 +1616,7 @@ slides/deck.html              estes slides, offline
 
 ===
 @type: capa
-@n: 96
+@n: 104
 @topo: obrigado
 @rodape: Arthur Maeda · akg.maeda@gmail.com
 # Agora é a sua vez de ensinar uma.
@@ -1473,6 +1686,8 @@ slides/deck.html              estes slides, offline
         if ((m = line.match(/^::step::\s*(.*)$/)))  { s.blocks.push({ kind: 'step', text: m[1] }); return; }
         if ((m = line.match(/^::lede::\s*(.*)$/)))  { s.blocks.push({ kind: 'lede', text: m[1] }); return; }
         if ((m = line.match(/^::quote::\s*(.*)$/))) { s.blocks.push({ kind: 'quote', text: m[1] }); return; }
+        if ((m = line.match(/^::subzinho::\s*(.*)$/))) { s.blocks.push({ kind: 'sub', text: m[1] }); return; }
+        if ((m = line.match(/^::rodape::\s*(.*)$/))) { s.blocks.push({ kind: 'nota', text: m[1] }); return; }
         if ((m = line.match(/^::big::\s*(.*)$/)))   { s.blocks.push({ kind: 'big', text: m[1] }); return; }
         if ((m = line.match(/^#\s+(.*)$/)))         { s.blocks.push({ kind: 'h1', text: m[1] }); return; }
         if ((m = line.match(/^##\s+(.*)$/)))        { s.blocks.push({ kind: 'h2', text: m[1] }); return; }
@@ -1530,11 +1745,39 @@ slides/deck.html              estes slides, offline
   var mascot    = document.getElementById('mascot');
   var tanglePath = document.getElementById('tanglePath');
   var stationsEl = document.getElementById('stations');
-  var stations  = Array.prototype.slice.call(document.querySelectorAll('.station'));
+  var stations  = [];
+
+  /* O Subzinho, copiado do produto: BODY_PATH e a expressão `neutro` de
+     front/src/features/copilot/subzinho/model.ts (ai-core). A cara neutra dele
+     expressão é a `contente` do EXPR: dois arcos, sem esclera e sem pupila.
+     Nada de sorriso e olho redondo, que era da versão de mock. */
+  var SUBZINHO =
+    '<span class="subpulo" style="display:block">' +
+    '<svg viewBox="0 0 76 130" role="img" aria-label="Subzinho">' +
+      '<g class="subswing">' +
+        '<g fill="none" stroke="#7D78EA" stroke-width="4" stroke-linecap="round">' +
+          '<path d="M 30 40 L 38 8"></path><path d="M 46 40 L 38 8"></path>' +
+        '</g>' +
+        '<path d="M 20 40 L 53 40 L 66 53 L 66 106 Q 66 116 56 116 L 20 116 Q 10 116 10 106 L 10 50 Q 10 40 20 40 Z" fill="#4F46E5"></path>' +
+        '<rect x="26" y="50" width="24" height="4" rx="2" fill="#7D78EA"></rect>' +
+        '<g fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M 22 88 Q 27 81 32 88"></path>' +
+          '<path d="M 44 88 Q 49 81 54 88"></path>' +
+        '</g>' +
+      '</g>' +
+    '</svg></span>';
 
   var PIECE = { prompt: ['1', 'prompt'], memoria: ['2', 'memória'], ferramentas: ['3', 'ferramentas'], loop: ['4', 'loop'] };
   var BARE = { capa: 1, quemsou: 1 };
   var si = 0, step = 0;
+
+  /* assuntos na ordem em que aparecem: é a régua de progresso do mascote */
+  var TEMAS = [], VIRADA = 0;
+  SLIDES.forEach(function (sl, i) {
+    if (sl.meta.virada) VIRADA = i;
+    var t = sl.meta.tema;
+    if (t && TEMAS.indexOf(t) < 0) TEMAS.push(t);
+  });
 
   /* ═══════════ render ═══════════ */
 
@@ -1609,6 +1852,50 @@ slides/deck.html              estes slides, offline
       return h + '</div>';
     }
 
+    if (s.type === 'pecas') {
+      var acesas = (s.meta.acende || 'todas').split(',').map(function (x) { return x.trim(); });
+      function liga(k) { return acesas[0] === 'todas' || acesas.indexOf(k) >= 0; }
+      var CARDS = [
+        ['prompt',      'quem ele é', 'texto que você escreve, e as permissões que ele tem'],
+        ['memória',     'o que ele lembra', 'a lista de mensagens que você reenvia inteira, todo turno'],
+        ['ferramentas', 'o que ele alcança', 'funções suas que ele pode pedir, mas nunca executar']
+      ];
+      var hh = s.blocks.filter(function (b) { return b.kind === 'h2'; })[0];
+      var ll = s.blocks.filter(function (b) { return b.kind === 'lede'; })[0];
+      h += hh ? '<h2>' + hh.text + '</h2>' : '';
+      h += ll ? '<p class="lede" style="margin-bottom:26px">' + ll.text + '</p>' : '';
+      h += '<div class="pecas"><div class="fila">';
+      CARDS.forEach(function (c, j) {
+        var chave = j === 1 ? 'memoria' : c[0];
+        h += '<div class="card ' + (liga(chave) ? 'on' : 'off') + '">' +
+             '<div class="num">peça ' + (j + 1) + '</div>' +
+             '<div class="nome">' + c[0] + '</div>' +
+             '<div class="desc"><b>' + c[1] + '</b><br>' + c[2] + '</div></div>';
+      });
+      h += '</div><div class="volta ' + (liga('loop') ? 'on' : 'off') + '">' +
+           '<span class="num">peça 4</span><span class="nome">loop</span>' +
+           '<span class="desc">repete as três até ele parar de pedir ferramenta</span>' +
+           '<span class="seta"></span></div></div>';
+      var qq = s.blocks.filter(function (b) { return b.kind === 'quote'; });
+      qq.forEach(function (b, j) {
+        h += '<blockquote class="step" data-i="' + j + '" style="margin-top:28px">' + b.text + '</blockquote>';
+      });
+      return h;
+    }
+
+    if (s.type === 'mascote') {
+      var mh = s.blocks.filter(function (b) { return b.kind === 'h2'; })[0];
+      h += '<div class="nofig"><div class="texto">';
+      h += mh ? '<h2 style="margin:0">' + mh.text + '</h2>' : '';
+      var mi = 0;
+      s.blocks.forEach(function (b) {
+        if (b.kind === 'lede')  h += '<p class="lede step" data-i="' + (mi++) + '">' + b.text + '</p>';
+        if (b.kind === 'quote') h += '<blockquote class="step" data-i="' + (mi++) + '">' + b.text + '</blockquote>';
+        if (b.kind === 'nota')  h += '<p class="nota">' + b.text + '</p>';
+      });
+      return h + '</div><div class="mascot-slot"></div></div>';
+    }
+
     if (s.type === 'quemsou') {
       var qh = s.blocks.filter(function (b) { return b.kind === 'h1'; })[0];
       var foto = s.meta.foto || '';
@@ -1620,7 +1907,10 @@ slides/deck.html              estes slides, offline
       h += qh ? '<h1>' + qh.text + '</h1>' : '';
       var qi = 0;
       s.blocks.forEach(function (b) {
-        if (b.kind === 'lede')  h += '<p class="lede">' + b.text + '</p>';
+        if (b.kind === 'lede')  h += '<p class="lede step" data-i="' + (qi++) + '">' + b.text + '</p>';
+        if (b.kind === 'sub')   h += '<div class="subrow">' +
+                                     '<p class="lede step" data-i="' + (qi++) + '" style="margin:0">' + b.text + '</p>' +
+                                     '<div class="subfig step" data-i="' + (qi++) + '">' + SUBZINHO + '</div></div>';
         if (b.kind === 'quote') h += '<blockquote class="step" data-i="' + (qi++) + '">' + b.text + '</blockquote>';
         if (b.kind === 'step')  h += '<p class="lede step" data-i="' + (qi++) + '">' + b.text + '</p>';
       });
@@ -1701,9 +1991,9 @@ slides/deck.html              estes slides, offline
     var max = 0;
     for (var i = 0; i < lines.length; i++) if (lines[i].length > max) max = lines[i].length;
     var cab = narrow ? 44 : 62;
-    if (max > cab * 1.62 || lines.length > 16) return ' class="xxs"';
-    if (max > cab * 1.30 || lines.length > 13) return ' class="xs"';
-    if (max > cab        || lines.length > 10) return ' class="sm"';
+    if (max > cab * 1.62 || lines.length > 15) return ' class="xxs"';
+    if (max > cab * 1.30 || lines.length > 12) return ' class="xs"';
+    if (max > cab        || lines.length > 7)  return ' class="sm"';
     return '';
   }
 
@@ -1715,7 +2005,7 @@ slides/deck.html              estes slides, offline
      A transição não troca de desenho: a órbita aperta até virar um nó de tinta,
      viaja, e abre de novo na densidade nova. Mesma fórmula o tempo todo. */
 
-  var curLoops = 2.2, curK = 1, rafId = null;
+  var curLoops = 2.2, curK = 1, rafId = null, relogios = [];
   var TIGHT = 0.26;
 
   function drawMascot() { tanglePath.setAttribute('d', scribble(curLoops, curK)); }
@@ -1739,11 +2029,37 @@ slides/deck.html              estes slides, offline
     rafId = requestAnimationFrame(frame);
   }
 
+  /* O mascote caminha sobre a própria linha do índice, no rodapé.
+     A posição dele na linha NÃO é aleatória: é o progresso no deck. Ele anda da
+     esquerda para a direita, um passo por assunto, e fica parado dentro de um
+     mesmo assunto. Quando a peça acende, ele assume a estação dela. */
+  function temaDoSlide(i) { return (SLIDES[i] && SLIDES[i].meta.tema) || ''; }
+
+  /* só cai aqui se o slide não tiver nem peça nem assunto */
+  function pousoLivre(i) { return { x: 150, y: 619 }; }
+
+  /* A trilha tem dois modos. Antes das peças ela é o índice dos assuntos, e o
+     nó flutua por ele. Quando a peça acende, ela vira o índice das peças. */
+  function montarTrilha(sl) {
+    var pecas = !!sl.piece;
+    var itens = pecas
+      ? [['prompt', PIECE.prompt[1]], ['memoria', PIECE.memoria[1]],
+         ['ferramentas', PIECE.ferramentas[1]], ['loop', PIECE.loop[1]]]
+      : TEMAS.map(function (t) { return [t, t]; });
+    var ativo = pecas ? sl.piece : temaDoSlide(si);
+    stationsEl.innerHTML = itens.map(function (it) {
+      return '<span class="station' + (it[0] === ativo ? ' on' : '') +
+             '" data-piece="' + it[0] + '">' + it[1] + '</span>';
+    }).join('');
+    stations = Array.prototype.slice.call(stationsEl.querySelectorAll('.station'));
+    stationsEl.classList.toggle('off', !itens.length);
+  }
+
   function stationCenter(piece) {
     var el = stations.filter(function (st) { return st.dataset.piece === piece; })[0];
-    if (!el) return { x: 1086, y: 619 };   /* sem peça ativa: descansa à direita, longe do texto */
-    var r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect();
-    return { x: (r.left - sr.left) / (sr.width / 1280) + (el.offsetWidth - 76) / 2, y: 619 };
+    if (!el) return pousoLivre(si);
+    var r = el.getBoundingClientRect(), sr = stage.getBoundingClientRect(), k = sr.width / 1280;
+    return { x: (r.left - sr.left) / k + 26, y: 619 };
   }
 
   function targetOf(target) {
@@ -1756,23 +2072,38 @@ slides/deck.html              estes slides, offline
     return { pos: stationCenter(target), scale: 0.58 };
   }
 
-  function placeMascot(target, loops, instant) {
+  function placeMascot(target, loops, modo) {
     var t = targetOf(target);
     function move() {
       mascot.style.setProperty('--mx', t.pos.x + 'px');
       mascot.style.setProperty('--my', t.pos.y + 'px');
       mascot.style.setProperty('--ms', t.scale);
     }
-    if (instant) { curLoops = loops; curK = 1; drawMascot(); move(); return; }
+    /* Uma viagem no ar deixava a classe `balled` pendurada quando o slide
+       seguinte entrava em outro modo, e os olhos sumiam para sempre. Agora
+       todo modo limpa o estado e cancela o que ficou de uma viagem anterior. */
+    if (relogios.length) { relogios.forEach(clearTimeout); relogios = []; }
+    mascot.classList.remove('balled');
+
+    if (modo === 'imediato') {
+      mascot.classList.remove('travelling');
+      curLoops = loops; curK = 1; drawMascot(); move(); return;
+    }
+    /* mesmo lugar, só o nó mudou: aperta sem enovelar nem viajar */
+    if (modo === 'so-voltas') {
+      mascot.classList.remove('travelling');
+      move(); tween(loops, 1, 520, easeInOut); return;
+    }
+
     mascot.classList.add('balled');
     tween(curLoops, TIGHT, 160, easeIn, function () {
       mascot.classList.add('travelling');
       move();
-      setTimeout(function () {
+      relogios.push(setTimeout(function () {
         mascot.classList.remove('balled');
         tween(loops, 1, 240, easeOut);
-        setTimeout(function () { mascot.classList.remove('travelling'); }, 60);
-      }, 380);
+        relogios.push(setTimeout(function () { mascot.classList.remove('travelling'); }, 60));
+      }, 380));
     });
   }
 
@@ -1794,17 +2125,36 @@ slides/deck.html              estes slides, offline
     headL.textContent = s.piece ? '· ' + PIECE[s.piece][0] + ' ·  ' + PIECE[s.piece][1] : (s.meta.tema || '');
     headR.textContent = s.meta.dir || '';
     pageNo.textContent = s.n;
-    stationsEl.classList.toggle('off', !s.piece);
-    stations.forEach(function (st) { st.classList.toggle('on', st.dataset.piece === s.piece); });
+    montarTrilha(s);
 
     step = 0;
     applySteps();
 
-    var onStage = s.type === 'progressao';
-    var key = onStage ? 'stage' : (s.piece || 'park');
+    var onStage = s.type === 'progressao' || s.type === 'mascote';
+    var vagando = !s.piece && !onStage;
+    /* a chave só muda quando o assunto muda, então ele anda poucas vezes */
+    var key = onStage ? 'stage' : (s.piece || 'tema:' + temaDoSlide(si));
     mascot.classList.toggle('hot', false);
+    mascot.classList.toggle('vagando', vagando);
     mascot.classList.toggle('hidden', !!BARE[s.type]);
-    placeMascot(onStage ? 'stage' : (s.piece || ''), onStage ? 1.3 : 2.2, instant || key === lastKey);
+    /* O nó aperta slide a slide enquanto a gente só empilha contexto, e solta
+       quando as quatro peças chegam: dali em diante você sabe administrá-lo. */
+    /* O nó aperta enquanto a gente só empilha contexto, e vai soltando de
+       pouco em pouco ao longo das quatro peças: a cada uma você entende mais
+       um pedaço do custo, e ele afrouxa junto. */
+    var voltas;
+    if (s.meta.voltas) voltas = parseFloat(s.meta.voltas);
+    else if (s.type === 'mascote') voltas = 2.8;
+    else if (onStage) voltas = 1.3;
+    else if (si < VIRADA) voltas = 1.5 + (si / VIRADA) * 2.3;
+    else {
+      /* da virada em diante ele solta: as boas práticas são onde a gente de
+         fato aprende a segurar o contexto, não as peças. */
+      var resto = Math.max(1, SLIDES.length - 1 - VIRADA);
+      voltas = 3.8 - ((si - VIRADA) / resto) * 2.3;
+    }
+    var modo = instant ? 'imediato' : (key === lastKey ? 'so-voltas' : 'viagem');
+    placeMascot(onStage ? 'stage' : (s.piece || temaDoSlide(si)), voltas, modo);
     lastKey = key;
   }
 

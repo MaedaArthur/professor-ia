@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-    Setup do workshop "Professor de IA", Windows.
+    Setup do workshop "Professor de IA" - Windows.
 
         powershell -ExecutionPolicy Bypass -File setup.ps1
 
@@ -14,6 +14,10 @@
 
     Funciona no Windows PowerShell 5.1 e no PowerShell 7: sem operador ternario,
     sem '??', sem -Encoding utf8NoBOM.
+
+    Texto sem acento de proposito: o Windows PowerShell 5.1 le arquivo .ps1 sem
+    BOM como ANSI, e o console legado usa code page 850/437. Acento viraria
+    caractere quebrado na tela do aluno. O .env continua em UTF-8.
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -53,11 +57,27 @@ function Escrever {
     }
 }
 
-function Titulo { param([string]$T) Write-Host ''; Escrever $T 'Cyan' }
-function Ok     { param([string]$T) Escrever ('  ok    ' + $T) 'Green' }
-function Aviso  { param([string]$T) Escrever ('  aviso ' + $T) 'Yellow' }
-function Falha  { param([string]$T) Escrever ('  erro  ' + $T) 'Red' }
-function Info   { param([string]$T) Write-Host ('        ' + $T) }
+function Titulo {
+    param([string]$T)
+    Write-Host ''
+    Escrever $T 'Cyan'
+}
+function Ok {
+    param([string]$T)
+    Escrever ('  ok    ' + $T) 'Green'
+}
+function Aviso {
+    param([string]$T)
+    Escrever ('  aviso ' + $T) 'Yellow'
+}
+function Falha {
+    param([string]$T)
+    Escrever ('  erro  ' + $T) 'Red'
+}
+function Info {
+    param([string]$T)
+    Write-Host ('        ' + $T)
+}
 
 # Erro fatal: primeira linha diz o que faltou, as seguintes dizem como resolver.
 # Nunca deixamos uma excecao crua chegar no aluno.
@@ -76,12 +96,19 @@ $Faltou = New-Object System.Collections.Generic.List[string]
 # excecao quando o programa escreve em stderr (classico do PowerShell 5.1).
 function Rodar {
     param([string]$Exe, [string[]]$Argumentos = @())
+    # -CommandType Application de proposito: chamo o programa do PATH, nunca uma
+    # funcao ou alias deste script que por acaso tenha o mesmo nome.
+    $app = Get-Command $Exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -eq $app) {
+        return New-Object psobject -Property @{ Codigo = 127; Saida = ("comando nao encontrado: " + $Exe) }
+    }
+    $caminho = $app.Source
     $anterior = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     $codigo = 1
     $saida = ''
     try {
-        $linhas = & $Exe @Argumentos 2>&1 | ForEach-Object { [string]$_ }
+        $linhas = & $caminho @Argumentos 2>&1 | ForEach-Object { [string]$_ }
         $codigo = $LASTEXITCODE
         if ($null -eq $codigo) { $codigo = 0 }
         if ($null -ne $linhas) { $saida = ($linhas -join [Environment]::NewLine) }
@@ -96,7 +123,7 @@ function Rodar {
 
 function Existe {
     param([string]$Nome)
-    $c = Get-Command $Nome -ErrorAction SilentlyContinue
+    $c = Get-Command $Nome -CommandType Application -ErrorAction SilentlyContinue
     return ($null -ne $c)
 }
 
@@ -110,7 +137,7 @@ function UltimasLinhas {
 }
 
 Write-Host '================================================================'
-Write-Host ' Professor de IA, setup (Windows)'
+Write-Host ' Professor de IA - setup (Windows)'
 Write-Host '================================================================'
 if ($DryRun) { Aviso 'SETUP_DRY_RUN=1: nada sera instalado e a rede nao sera usada.' }
 
@@ -144,7 +171,7 @@ foreach ($t in $tentativas) {
 
 if ($null -eq $PyExe) {
     if ($versaoVelha -ne '') {
-        Morrer ("Python encontrado, mas e a versao $versaoVelha, o workshop precisa de 3.9 ou mais novo.") @(
+        Morrer ("Python encontrado, mas e a versao $versaoVelha - o workshop precisa de 3.9 ou mais novo.") @(
             'Baixe uma versao nova em https://www.python.org/downloads/',
             'Marque "Add Python to PATH" no instalador.',
             'Depois feche e abra o PowerShell e rode o setup.ps1 de novo.'
@@ -158,13 +185,13 @@ if ($null -eq $PyExe) {
 }
 
 # Como chamar o Python daqui para frente: executavel + argumentos fixos.
-function Python {
+function RodarPython {
     param([string[]]$Argumentos = @())
     return (Rodar $PyExe ($PyFixos + $Argumentos))
 }
 $ComandoPython = ($PyExe + ' ' + ($PyFixos -join ' ')).Trim()
 
-$rv = Python @('-c', 'import sys; print("%d.%d.%d" % sys.version_info[:3])')
+$rv = RodarPython @('-c', 'import sys; print("%d.%d.%d" % sys.version_info[:3])')
 Ok ($ComandoPython + ' ' + $rv.Saida.Trim())
 
 # ------------------------------------------------------------------- 2. Git
@@ -200,7 +227,7 @@ foreach ($nome in @('pip', 'pip3')) {
     if (Existe $nome) { $pipExe = $nome; break }
 }
 if ($null -eq $pipExe) {
-    $teste = Python @('-m', 'pip', '--version')
+    $teste = RodarPython @('-m', 'pip', '--version')
     if ($teste.Codigo -eq 0) { $pipExe = $PyExe; $pipFixos = ($PyFixos + @('-m', 'pip')) }
 }
 
@@ -272,7 +299,7 @@ if (TemOpenCode) {
     # ha o que tentar: paro aqui com o link, como pede o README.
     if (-not (Existe 'npm')) {
         Write-Host ''
-        Falha 'Node.js nao encontrado, e ele que traz o npm, usado para instalar o OpenCode.'
+        Falha 'Node.js nao encontrado - e ele que traz o npm, usado para instalar o OpenCode.'
         Info  'Instale o Node.js em https://nodejs.org (versao LTS).'
         Info  'Depois feche e abra o PowerShell e rode o setup.ps1 de novo:'
         Info  '  powershell -ExecutionPolicy Bypass -File setup.ps1'
@@ -377,14 +404,14 @@ function PerguntarChave {
     Write-Host ''
     Write-Host ('  ' + $Nome)
     Write-Host ('    pegue a sua em ' + $Link + ' (gratis, sem cartao)')
-    Write-Host ('    comeca com "' + $Prefixo + '", ou aperte Enter para pular e preencher depois')
+    Write-Host ('    comeca com "' + $Prefixo + '" - ou aperte Enter para pular e preencher depois')
 
     for ($tentativa = 1; $tentativa -le 3; $tentativa++) {
         $digitado = LerLinha
 
         if ($digitado -eq '') {
             Aviso "$Nome pulada."
-            $Faltou.Add("$Nome, pegue em $Link e ponha no .env")
+            $Faltou.Add("$Nome - pegue em $Link e ponha no .env")
             return
         }
 
@@ -397,7 +424,7 @@ function PerguntarChave {
         }
 
         if (-not $digitado.StartsWith($Prefixo)) {
-            Aviso ('normalmente essa chave comeca com "' + $Prefixo + '", confira se copiou a certa.')
+            Aviso ('normalmente essa chave comeca com "' + $Prefixo + '" - confira se copiou a certa.')
         }
 
         GravarEnv $Nome $digitado
@@ -407,7 +434,7 @@ function PerguntarChave {
     }
 
     Aviso "$Nome nao foi preenchida (tres tentativas invalidas)."
-    $Faltou.Add("$Nome, pegue em $Link e ponha no .env")
+    $Faltou.Add("$Nome - pegue em $Link e ponha no .env")
 }
 
 PerguntarChave 'GEMINI_API_KEY'     'https://aistudio.google.com/apikey' 'AIza'
@@ -427,10 +454,10 @@ $ChaveGemini = LerEnv 'GEMINI_API_KEY'
 $TestePassou = $false
 
 if ($ChaveGemini -eq '') {
-    Aviso 'sem GEMINI_API_KEY no .env, pulei o teste.'
+    Aviso 'sem GEMINI_API_KEY no .env - pulei o teste.'
     Info  "Preencha a GEMINI_API_KEY no .env e rode: $ComandoPython 01_chamada_minima.py"
 } elseif (-not (Test-Path -LiteralPath $ArqTeste)) {
-    Aviso 'nao achei o 01_chamada_minima.py, pulei o teste.'
+    Aviso 'nao achei o 01_chamada_minima.py - pulei o teste.'
 } elseif ($DryRun) {
     Aviso 'pulado (SETUP_DRY_RUN=1): o teste faz uma chamada de rede de verdade.'
 } else {
@@ -438,13 +465,13 @@ if ($ChaveGemini -eq '') {
     $antes = $env:GEMINI_API_KEY
     $env:GEMINI_API_KEY = $ChaveGemini
     try {
-        $r = Python @('01_chamada_minima.py')
+        $r = RodarPython @('01_chamada_minima.py')
     } finally {
         # O .env e a fonte da verdade; nao deixo a chave vazando na sessao.
         $env:GEMINI_API_KEY = $antes
     }
     if ($r.Codigo -eq 0) {
-        Ok 'o teste passou, a chave do Gemini funciona.'
+        Ok 'o teste passou - a chave do Gemini funciona.'
         $TestePassou = $true
         $Feito.Add('teste 01_chamada_minima.py passou')
     } else {
